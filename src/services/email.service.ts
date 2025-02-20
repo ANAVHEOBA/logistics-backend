@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { config } from '../config/environment';
 import { IOrder } from '../modules/order/order.model';
 import { IUser } from '../modules/user/user.model';
+import { IOrderItem } from '../modules/orderItem/orderItem.model';
 
 export class EmailService {
   private transporter: nodemailer.Transporter;
@@ -116,5 +117,68 @@ export class EmailService {
       <br>
       Phone: ${manualAddress.recipientPhone}
     `;
+  }
+
+  async sendStoreOrderNotification(storeEmail: string, order: IOrder, items: IOrderItem[]): Promise<void> {
+    const mailOptions = {
+      from: `Logistics System <${config.email.user}>`,
+      to: storeEmail,
+      subject: `New Order Received - ${order.trackingNumber}`,
+      html: `
+        <h2>New Order Received</h2>
+        <p>You have received a new order!</p>
+        <p><strong>Order Details:</strong></p>
+        <ul>
+          <li>Order ID: ${order._id}</li>
+          <li>Tracking Number: ${order.trackingNumber}</li>
+          <li>Status: ${order.status}</li>
+        </ul>
+        <p><strong>Items:</strong></p>
+        <ul>
+          ${items.map(item => `
+            <li>
+              Product ID: ${item.productId}<br>
+              Quantity: ${item.quantity}<br>
+              Price: ₦${item.price}
+            </li>
+          `).join('')}
+        </ul>
+        <p>Please prepare these items for pickup.</p>
+      `
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send store notification:', error);
+      throw error;
+    }
+  }
+
+  async sendDeliveryConfirmation(user: IUser, order: IOrder): Promise<void> {
+    const mailOptions = {
+      from: `Logistics System <${config.email.user}>`,
+      to: user.email,
+      subject: `Delivery Confirmation - ${order.trackingNumber}`,
+      html: `
+        <h2>Delivery Confirmation</h2>
+        <p>Hello ${user.name},</p>
+        <p>Your order has been successfully delivered!</p>
+        <p><strong>Order Details:</strong></p>
+        <ul>
+          <li>Tracking Number: ${order.trackingNumber}</li>
+          <li>Delivery Date: ${new Date(order.deliveryDate!).toLocaleDateString()}</li>
+        </ul>
+        <p>Thank you for using our service! We hope you enjoyed your experience.</p>
+        <p>If you have any feedback, please don't hesitate to contact us.</p>
+      `
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send delivery confirmation:', error);
+      throw error;
+    }
   }
 } 

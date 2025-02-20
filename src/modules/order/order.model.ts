@@ -1,4 +1,5 @@
 import { Document, Types } from 'mongoose';
+import { IOrderItem as IOrderItemDocument } from '../orderItem/orderItem.model';
 
 export type PackageSize = 'SMALL' | 'MEDIUM' | 'LARGE' | 'EXTRA_LARGE';
 export type OrderStatus = 
@@ -10,10 +11,18 @@ export type OrderStatus =
   | 'CANCELLED' 
   | 'FAILED_DELIVERY';
 
-export interface IOrderItem {
+export interface IOrderItemBase {
   name: string;
   quantity: number;
   description?: string;
+  productId: string;
+  storeId: string;
+  price: number;
+  variantData?: {
+    name: string;
+    value: string;
+    price: number;
+  }[];
 }
 
 export interface IManualAddress {
@@ -50,7 +59,7 @@ export interface IOrderBase {
   deliveryDate?: Date;
   estimatedDeliveryDate: Date;
   
-  items: IOrderItem[];
+  items: IOrderItemBase[];
   specialInstructions?: string;
 }
 
@@ -61,6 +70,7 @@ export interface IOrderDocument extends Document, IOrderBase {
 }
 
 export interface IOrder {
+  _id: string;
   userId: string;
   trackingNumber: string;
   pickupAddress: string | IManualAddress;
@@ -70,15 +80,13 @@ export interface IOrder {
   isFragile: boolean;
   isExpressDelivery: boolean;
   requiresSpecialHandling: boolean;
-  items: Array<{
-    name: string;
-    quantity: number;
-    description?: string;
-  }>;
+  items: IOrderItemDocument[];
   specialInstructions?: string;
   estimatedWeight: number;
   price: number;
   estimatedDeliveryDate: Date;
+  pickupDate?: Date;
+  deliveryDate?: Date;
   statusNotes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -91,7 +99,7 @@ export interface ICreateOrderRequest {
   isFragile: boolean;
   isExpressDelivery: boolean;
   requiresSpecialHandling: boolean;
-  items: IOrderItem[];
+  items: IOrderItemBase[];
   specialInstructions?: string;
 }
 

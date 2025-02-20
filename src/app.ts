@@ -7,6 +7,8 @@ import userRouter from './modules/user/user.router';
 import addressRouter from './modules/address/address.router';
 import orderRouter from './modules/order/order.router';
 import adminRouter from './modules/admin/admin.router';
+import storeRouter from './modules/store/store.router';
+import productRouter from './modules/product/product.router';
 import { errorHandler } from './middleware/error.middleware';
 
 dotenv.config();
@@ -23,6 +25,8 @@ app.use('/api/users', userRouter);
 app.use('/api/addresses', addressRouter);
 app.use('/api/orders', orderRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/stores', storeRouter);
+app.use('/api/products', productRouter);
 
 // Health check route
 app.get('/health', (req, res) => {

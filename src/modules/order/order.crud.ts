@@ -6,6 +6,7 @@ import {
   OrderStatus 
 } from './order.model';
 import mongoose from 'mongoose';
+import { OrderItem } from '../orderItem/orderItem.schema';
 
 interface OrderFilters {
   status?: OrderStatus;
@@ -31,20 +32,38 @@ interface OrderStats {
 
 export class OrderCrud {
   async createOrder(userId: string, orderData: ICreateOrderRequest): Promise<IOrder> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-      const order = await OrderSchema.create({
+      // Create order
+      const order = await OrderSchema.create([{
         ...orderData,
         userId
-      });
-      
-      const populatedOrder = await order.populate([
-        { path: 'pickupAddress' },
-        { path: 'deliveryAddress' }
-      ]);
+      }], { session });
 
-      return this.toOrderResponse(populatedOrder);
+      // Create order items
+      const orderItems = await OrderItem.create(
+        orderData.items.map(item => ({
+          orderId: order[0]._id,
+          productId: item.productId,
+          storeId: item.storeId,
+          quantity: item.quantity,
+          price: item.price,
+          variantData: item.variantData,
+          name: item.name,
+          description: item.description
+        })),
+        { session }
+      );
+
+      await session.commitTransaction();
+      return this.toOrderResponse({ ...order[0].toObject(), items: orderItems });
     } catch (error) {
+      await session.abortTransaction();
       throw error;
+    } finally {
+      session.endSession();
     }
   }
 

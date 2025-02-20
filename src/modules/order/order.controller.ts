@@ -205,6 +205,19 @@ export class OrderController {
         return;
       }
 
+      // Get user for notifications
+      const user = await this.userCrud.findById(order.userId);
+      
+      if (user) {
+        // Send status update email
+        await this.emailService.sendOrderStatusUpdate(user, order);
+        
+        // If delivered, send delivery confirmation
+        if (status === 'DELIVERED') {
+          await this.emailService.sendDeliveryConfirmation(user, order);
+        }
+      }
+
       res.status(200).json({
         success: true,
         data: order
