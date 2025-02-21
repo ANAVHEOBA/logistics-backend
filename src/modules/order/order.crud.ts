@@ -3,7 +3,9 @@ import {
   IOrder, 
   IOrderDocument, 
   ICreateOrderRequest, 
-  OrderStatus 
+  ICreateGuestOrderRequest,
+  OrderStatus,
+  IOrderItemBase 
 } from './order.model';
 import mongoose from 'mongoose';
 import { OrderItem } from '../orderItem/orderItem.schema';
@@ -52,13 +54,30 @@ export class OrderCrud {
           price: item.price,
           variantData: item.variantData,
           name: item.name,
-          description: item.description
+          status: 'PENDING' // Add default status
         })),
         { session }
       );
 
+      // Convert the order items to the expected format
+      const formattedItems = orderItems.map(item => ({
+        productId: item.productId.toString(),
+        storeId: item.storeId.toString(),
+        quantity: item.quantity,
+        price: item.price,
+        variantData: item.variantData,
+        name: item.name
+      }));
+
+      // Create a proper IOrderDocument
+      const orderDoc = order[0];
+      const orderWithItems = {
+        ...orderDoc.toObject(),
+        items: formattedItems
+      };
+
       await session.commitTransaction();
-      return this.toOrderResponse({ ...order[0].toObject(), items: orderItems });
+      return this.toOrderResponse(orderDoc);
     } catch (error) {
       await session.abortTransaction();
       throw error;
@@ -288,18 +307,109 @@ export class OrderCrud {
     }
   }
 
+  async createGuestOrder(orderData: ICreateGuestOrderRequest): Promise<IOrder> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Ensure addresses are properly formatted
+      const orderWithAddresses = {
+        ...orderData,
+        pickupAddress: {
+          ...orderData.pickupAddress,
+          recipientName: orderData.pickupAddress.recipientName,
+          recipientPhone: orderData.pickupAddress.recipientPhone
+        },
+        deliveryAddress: {
+          ...orderData.deliveryAddress,
+          recipientName: orderData.deliveryAddress.recipientName,
+          recipientPhone: orderData.deliveryAddress.recipientPhone
+        },
+        status: 'PENDING',
+        packageSize: orderData.packageSize || 'SMALL',
+        isFragile: orderData.isFragile || false,
+        isExpressDelivery: orderData.isExpressDelivery || false,
+        requiresSpecialHandling: orderData.requiresSpecialHandling || false,
+        estimatedDeliveryDate: this.calculateEstimatedDeliveryDate(orderData.isExpressDelivery || false)
+      };
+
+      // Create order with guest info
+      const order = await OrderSchema.create([orderWithAddresses], { session });
+
+      // Create order items with all required fields
+      const orderItems = await OrderItem.create(
+        orderData.items.map((item: IOrderItemBase) => ({
+          orderId: order[0]._id,
+          productId: item.productId,
+          storeId: item.storeId,
+          quantity: item.quantity,
+          price: item.price,
+          name: item.name, // Use the name directly from the item
+          variantData: item.variantData,
+          status: 'PENDING'
+        })),
+        { session }
+      );
+
+      // Format the items for the order response
+      const formattedItems = orderItems.map(item => ({
+        productId: item.productId.toString(),
+        storeId: item.storeId.toString(),
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name,
+        variantData: item.variantData
+      }));
+
+      // Update the order with formatted items
+      const orderDoc = order[0];
+      orderDoc.items = formattedItems;
+
+      // Save the updated order
+      await orderDoc.save({ session });
+
+      // Commit transaction
+      await session.commitTransaction();
+      
+      // Return the order response
+      return this.toOrderResponse(orderDoc);
+    } catch (error) {
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  private calculateEstimatedDeliveryDate(isExpressDelivery: boolean): Date {
+    const date = new Date();
+    date.setDate(date.getDate() + (isExpressDelivery ? 1 : 3)); // Express delivery is 1 day, standard is 3 days
+    return date;
+  }
+
   private toOrderResponse(order: IOrderDocument): IOrder {
     const orderObject = order.toObject();
     return {
       ...orderObject,
       _id: orderObject._id.toString(),
-      userId: orderObject.userId.toString(),
-      pickupAddress: typeof orderObject.pickupAddress === 'object' ? 
-        { ...orderObject.pickupAddress, _id: orderObject.pickupAddress._id.toString() } :
-        orderObject.pickupAddress.toString(),
-      deliveryAddress: typeof orderObject.deliveryAddress === 'object' ?
-        orderObject.deliveryAddress : // Keep manual address as is
-        orderObject.deliveryAddress.toString() // Convert ObjectId to string
+      userId: orderObject.userId ? orderObject.userId.toString() : undefined,
+      pickupAddress: orderObject.pickupAddress ? (
+        typeof orderObject.pickupAddress === 'object' ? 
+          orderObject.pickupAddress : // Keep manual address as is for guest orders
+          orderObject.pickupAddress.toString() // Convert ObjectId to string for user orders
+      ) : undefined,
+      deliveryAddress: orderObject.deliveryAddress ? (
+        typeof orderObject.deliveryAddress === 'object' ? 
+          orderObject.deliveryAddress : // Keep manual address as is
+          orderObject.deliveryAddress.toString() // Convert ObjectId to string
+      ) : undefined,
+      items: orderObject.items.map((item: IOrderItemBase & { productId: any; storeId: any }) => ({
+        ...item,
+        productId: typeof item.productId === 'object' ? item.productId.toString() : item.productId,
+        storeId: typeof item.storeId === 'object' ? item.storeId.toString() : item.storeId
+      }))
     } as IOrder;
   }
 }

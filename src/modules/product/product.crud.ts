@@ -112,4 +112,84 @@ export class ProductCrud {
       totalPages: Math.ceil(total / limit)
     };
   }
+
+  async getGuestOrderableProducts(storeId: string): Promise<IProduct[]> {
+    return await Product.find({
+      storeId,
+      status: ProductStatus.ACTIVE,
+      isPublished: true,
+      guestOrderEnabled: true,
+      stock: { $gt: 0 }
+    });
+  }
+
+  async validateGuestOrderQuantity(
+    productId: string,
+    quantity: number
+  ): Promise<{ 
+    valid: boolean;
+    message?: string;
+    product?: IProduct 
+  }> {
+    const product = await this.getProductById(productId);
+    
+    if (!product) {
+      return { valid: false, message: 'Product not found' };
+    }
+
+    if (!product.guestOrderEnabled) {
+      return { valid: false, message: 'Product not available for guest orders' };
+    }
+
+    if (quantity < product.minOrderQuantity) {
+      return { 
+        valid: false, 
+        message: `Minimum order quantity is ${product.minOrderQuantity}`,
+        product 
+      };
+    }
+
+    if (quantity > product.maxOrderQuantity) {
+      return { 
+        valid: false, 
+        message: `Maximum order quantity is ${product.maxOrderQuantity}`,
+        product 
+      };
+    }
+
+    if (quantity > product.stock) {
+      return { 
+        valid: false, 
+        message: `Only ${product.stock} items available`,
+        product 
+      };
+    }
+
+    return { valid: true, product };
+  }
+
+  async reserveProductStock(
+    productId: string,
+    quantity: number,
+    expiryMinutes: number = 15
+  ): Promise<boolean> {
+    const product = await Product.findOneAndUpdate(
+      {
+        _id: productId,
+        stock: { $gte: quantity }
+      },
+      {
+        $inc: { stock: -quantity },
+        $push: {
+          reservations: {
+            quantity,
+            expiresAt: new Date(Date.now() + expiryMinutes * 60000)
+          }
+        }
+      },
+      { new: true }
+    );
+
+    return !!product;
+  }
 } 

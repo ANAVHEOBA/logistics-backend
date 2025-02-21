@@ -102,3 +102,57 @@ aaa@aaa:~/logistics-backend$ curl -X PATCH \
     "notes": "Order has been confirmed and will be picked up shortly"
   }'
 {"success":true,"data":{"order":{"_id":"67b5e334cdcac4c3a496ea1b","userId":"67b5b5af7dbb3db7e457d7d8","pickupAddress":{"_id":"67b5ba23f6fbd5420ab073d3","userId":"67b5b5af7dbb3db7e457d7d8","street":"45 Park Avenue","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"100002","isDefault":true,"label":"Office","createdAt":"2025-02-19T11:01:55.273Z","updatedAt":"2025-02-19T11:01:55.273Z","__v":0},"deliveryAddress":{"type":"manual","manualAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Michael Johnson","recipientPhone":"+2341234567890"}},"packageSize":"MEDIUM","status":"CONFIRMED","isFragile":true,"isExpressDelivery":true,"requiresSpecialHandling":false,"items":[{"name":"iPhone 15 Pro","quantity":1,"description":"New sealed phone","_id":"67b5e334cdcac4c3a496ea1c"}],"specialInstructions":"Please call recipient before delivery","trackingNumber":"LG-20250219-0A7F2","estimatedWeight":20,"price":4500,"estimatedDeliveryDate":"2025-02-20T13:57:08.207Z","createdAt":"2025-02-19T13:57:08.221Z","updatedAt":"2025-02-19T14:04:27.407Z","__v":0},"emailSent":true}}aaa@aaa:~/logistics-backend$ 
+
+
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X PATCH "http://localhost:5000/api/admin/orders/67b7616b20507d372067b2f2/status" \d372067b2f2/status" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwMDczNTQ2LCJleHAiOjE3NDAxNTk5NDZ9.fIwujVWsxlmseh2HUayYgsWyemLwdCoNsfQK9xHqQW0" \
+-H "Content-Type: application/json" \
+-d '{
+  "status": "CONFIRMED",
+  "notes": "Order confirmed and ready for pickup"
+}'
+{"success":true,"data":{"order":{"guestInfo":{"email":"guest@example.com","firstName":"John","lastName":"Doe","phone":"+2341234567890"},"_id":"67b7616b20507d372067b2f2","pickupAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890"},"deliveryAddress":{"street":"123 Guest Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"packageSize":"SMALL","status":"CONFIRMED","isFragile":true,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-02-23T17:07:55.335Z","items":[{"productId":"67b70692de8de32b32ce938e","storeId":"67b7410f256d7687d08935fd","quantity":1,"price":49.99,"variantData":[{"name":"Size","value":"M","price":59.99,"_id":"67b7616b20507d372067b2f7"}],"_id":"67b7616b20507d372067b2f9"}],"specialInstructions":"Please handle with care","trackingNumber":"LG-20250220-219D6","estimatedWeight":5,"price":1500,"createdAt":"2025-02-20T17:07:55.357Z","updatedAt":"2025-02-20T17:49:07.138Z","__v":1},"emailSent":true}}a@a:~/logistics-backend$ 
+
+
+
+
+
+@a:~/logistics-backend$ curl -X PATCH "http://localhost:5000/api/admin/orders/67b7616b20507d372067b2f2/status" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwMDczNTQ2LCJleHAiOjE3NDAxNTk5NDZ9.fIwujVWsxlmseh2HUayYgsWyemLwdCoNsfQK9xHqQW0" \
+-H "Content-Type: application/json" \
+-d '{
+  "status": "PICKED_UP",
+  "notes": "Package picked up from store"
+}'
+{"success":true,"data":{"order":{"guestInfo":{"email":"guest@example.com","firstName":"John","lastName":"Doe","phone":"+2341234567890"},"_id":"67b7616b20507d372067b2f2","pickupAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890"},"deliveryAddress":{"street":"123 Guest Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"packageSize":"SMALL","status":"PICKED_UP","isFragile":true,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-02-23T17:07:55.335Z","items":[{"productId":"67b70692de8de32b32ce938e","storeId":"67b7410f256d7687d08935fd","quantity":1,"price":49.99,"variantData":[{"name":"Size","value":"M","price":59.99,"_id":"67b7616b20507d372067b2f7"}],"_id":"67b7616b20507d372067b2f9"}],"specialInstructions":"Please handle with care","trackingNumber":"LG-20250220-219D6","estimatedWeight":5,"price":1500,"createdAt":"2025-02-20T17:07:55.357Z","updatedAt":"2025-02-20T17:49:43.853Z","__v":1},"emailSent":true}}a@a:~/logistics-backend$ 
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X PATCH "http://localhost:5000/api/admin/orders/67b7616b20507d372067b2f2/status" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwMDczNTQ2LCJleHAiOjE3NDAxNTk5NDZ9.fIwujVWsxlmseh2HUayYgsWyemLwdCoNsfQK9xHqQW0" \
+-H "Content-Type: application/json" \
+-d '{
+  "status": "IN_TRANSIT",
+  "notes": "Package in transit to delivery location"
+}'
+{"success":true,"data":{"order":{"guestInfo":{"email":"guest@example.com","firstName":"John","lastName":"Doe","phone":"+2341234567890"},"_id":"67b7616b20507d372067b2f2","pickupAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890"},"deliveryAddress":{"street":"123 Guest Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"packageSize":"SMALL","status":"IN_TRANSIT","isFragile":true,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-02-23T17:07:55.335Z","items":[{"productId":"67b70692de8de32b32ce938e","storeId":"67b7410f256d7687d08935fd","quantity":1,"price":49.99,"variantData":[{"name":"Size","value":"M","price":59.99,"_id":"67b7616b20507d372067b2f7"}],"_id":"67b7616b20507d372067b2f9"}],"specialInstructions":"Please handle with care","trackingNumber":"LG-20250220-219D6","estimatedWeight":5,"price":1500,"createdAt":"2025-02-20T17:07:55.357Z","updatedAt":"2025-02-20T17:50:05.839Z","__v":1},"emailSent":true}}a@a:~/logistics-backend$ 
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X PATCH "http://localhost:5000/api/admin/orders/67b7616b20507d372067b2f2/status" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwMDczNTQ2LCJleHAiOjE3NDAxNTk5NDZ9.fIwujVWsxlmseh2HUayYgsWyemLwdCoNsfQK9xHqQW0" \
+-H "Content-Type: application/json" \
+-d '{
+  "status": "DELIVERED",
+  "notes": "Package successfully delivered to recipient"
+}'
+{"success":true,"data":{"order":{"guestInfo":{"email":"guest@example.com","firstName":"John","lastName":"Doe","phone":"+2341234567890"},"_id":"67b7616b20507d372067b2f2","pickupAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890"},"deliveryAddress":{"street":"123 Guest Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"packageSize":"SMALL","status":"DELIVERED","isFragile":true,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-02-23T17:07:55.335Z","items":[{"productId":"67b70692de8de32b32ce938e","storeId":"67b7410f256d7687d08935fd","quantity":1,"price":49.99,"variantData":[{"name":"Size","value":"M","price":59.99,"_id":"67b7616b20507d372067b2f7"}],"_id":"67b7616b20507d372067b2f9"}],"specialInstructions":"Please handle with care","trackingNumber":"LG-20250220-219D6","estimatedWeight":5,"price":1500,"createdAt":"2025-02-20T17:07:55.357Z","updatedAt":"2025-02-20T17:50:49.360Z","__v":1},"emailSent":true}}a@a:~/logistics-backend$ 

@@ -86,7 +86,7 @@ export class OrderController {
       // Send order confirmation email
       const user = await this.userCrud.findById(userId);
       if (user) {
-        await this.emailService.sendOrderConfirmation(user, order);
+        await this.emailService.sendOrderConfirmation(this.userCrud.toUser(user), order);
       }
 
       res.status(201).json({
@@ -210,11 +210,11 @@ export class OrderController {
       
       if (user) {
         // Send status update email
-        await this.emailService.sendOrderStatusUpdate(user, order);
+        await this.emailService.sendOrderStatusUpdate(this.userCrud.toUser(user), order);
         
         // If delivered, send delivery confirmation
         if (status === 'DELIVERED') {
-          await this.emailService.sendDeliveryConfirmation(user, order);
+          await this.emailService.sendDeliveryConfirmation(this.userCrud.toUser(user), order);
         }
       }
 

@@ -1,5 +1,5 @@
 import { Document, Types } from 'mongoose';
-import { IOrderItem as IOrderItemDocument } from '../orderItem/orderItem.model';
+import { IOrderItemResponse } from '../orderItem/orderItem.model';
 
 export type PackageSize = 'SMALL' | 'MEDIUM' | 'LARGE' | 'EXTRA_LARGE';
 export type OrderStatus = 
@@ -41,10 +41,18 @@ export interface IDeliveryAddress {
   manualAddress?: IManualAddress; // Manual address details if not using saved
 }
 
+export interface IGuestInfo {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
 export interface IOrderBase {
-  userId: string;
-  pickupAddress: string;
-  deliveryAddress: string | IManualAddress; // Can be either address ID or manual address
+  userId?: string;  // Optional for guest orders
+  guestInfo?: IGuestInfo;  // New field for guest orders
+  pickupAddress: Types.ObjectId | IManualAddress;  // Changed from string to match actual usage
+  deliveryAddress: Types.ObjectId | IManualAddress;  // Changed to match actual usage
   packageSize: PackageSize;
   estimatedWeight: number;
   status: OrderStatus;
@@ -80,7 +88,7 @@ export interface IOrder {
   isFragile: boolean;
   isExpressDelivery: boolean;
   requiresSpecialHandling: boolean;
-  items: IOrderItemDocument[];
+  items: IOrderItemResponse[];
   specialInstructions?: string;
   estimatedWeight: number;
   price: number;
@@ -105,4 +113,54 @@ export interface ICreateOrderRequest {
 
 export interface IUpdateOrderRequest extends Partial<ICreateOrderRequest> {
   status?: OrderStatus;
+}
+
+export interface ICreateGuestOrderRequest {
+  guestInfo: IGuestInfo;
+  pickupAddress: IManualAddress;  // Store's address
+  deliveryAddress: IManualAddress;  // Guest orders always use manual address
+  packageSize?: PackageSize;  // Optional with default
+  isFragile?: boolean;
+  isExpressDelivery?: boolean;
+  requiresSpecialHandling?: boolean;
+  items: IOrderItemBase[];
+  specialInstructions?: string;
+}
+
+// New interface for lean order items
+export interface IOrderItemLean {
+  productId: Types.ObjectId;
+  storeId: Types.ObjectId;
+  quantity: number;
+  price: number;
+  name: string;
+  description?: string;
+  variantData?: {
+    name: string;
+    value: string;
+    price: number;
+  }[];
+}
+
+// Update IOrderLean to use the new interface
+export interface IOrderLean extends Omit<IOrderDocument, keyof Document | 'items'> {
+  _id: Types.ObjectId;
+  userId?: string;
+  pickupAddress: Types.ObjectId | IManualAddress;
+  deliveryAddress: Types.ObjectId | IManualAddress;
+  items: IOrderItemLean[];  // Use the new interface
+  packageSize: PackageSize;
+  status: OrderStatus;
+  trackingNumber: string;
+  isFragile: boolean;
+  isExpressDelivery: boolean;
+  requiresSpecialHandling: boolean;
+  estimatedWeight: number;
+  price: number;
+  estimatedDeliveryDate: Date;
+  pickupDate?: Date;
+  deliveryDate?: Date;
+  statusNotes?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

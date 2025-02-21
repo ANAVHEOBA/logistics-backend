@@ -352,4 +352,51 @@ export class ProductController {
       });
     }
   };
+
+  getGuestOrderableProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+      const products = await this.productCrud.getGuestOrderableProducts(storeId);
+
+      res.status(200).json({
+        success: true,
+        data: products
+      });
+    } catch (error) {
+      console.error('Get guest orderable products error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get products'
+      });
+    }
+  };
+
+  validateGuestOrderQuantity = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { productId, quantity } = req.body;
+      const result = await this.productCrud.validateGuestOrderQuantity(
+        productId,
+        quantity
+      );
+
+      if (!result.valid) {
+        res.status(400).json({
+          success: false,
+          message: result.message
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: result.product
+      });
+    } catch (error) {
+      console.error('Validate guest order quantity error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to validate order quantity'
+      });
+    }
+  };
 } 

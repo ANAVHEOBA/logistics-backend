@@ -56,4 +56,15 @@ router.get(
   productController.getProductById
 );
 
+// Guest order routes
+router.get(
+  '/store/:storeId/guest-orderable',
+  productController.getGuestOrderableProducts
+);
+
+router.post(
+  '/validate-guest-order',
+  productController.validateGuestOrderQuantity
+);
+
 export default router; 

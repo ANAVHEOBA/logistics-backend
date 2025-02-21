@@ -20,6 +20,18 @@ export interface IProduct extends Document {
   isPublished: boolean;
   createdAt: Date;
   updatedAt: Date;
+  guestOrderEnabled: boolean;
+  minOrderQuantity: number;
+  maxOrderQuantity: number;
+  shippingInfo?: {
+    weight: number;
+    dimensions: {
+      length: number;
+      width: number;
+      height: number;
+    };
+    requiresSpecialHandling: boolean;
+  };
 }
 
 export enum ProductStatus {
@@ -78,6 +90,29 @@ const productSchema = new Schema({
   isPublished: {
     type: Boolean,
     default: false
+  },
+  guestOrderEnabled: {
+    type: Boolean,
+    default: true
+  },
+  minOrderQuantity: {
+    type: Number,
+    default: 1,
+    min: 1
+  },
+  maxOrderQuantity: {
+    type: Number,
+    default: 999,
+    min: 1
+  },
+  shippingInfo: {
+    weight: Number,
+    dimensions: {
+      length: Number,
+      width: Number,
+      height: Number
+    },
+    requiresSpecialHandling: Boolean
   }
 }, {
   timestamps: true

@@ -280,3 +280,125 @@ aaa@aaa:~/logistics-backend$ curl -X GET "http://localhost:5000/api/products/sea
 {"success":true,"data":{"products":[{"_id":"67b70692de8de32b32ce938e","storeId":"67b701f6c60e41de8b307d9e","name":"Floral Summer Dress","description":"Beautiful floral print summer dress, perfect for beach days and casual outings","price":49.99,"category":"FASHION","images":["https://example.com/dress1.jpg"],"stock":80,"specifications":{"material":"Cotton","size":"S,M,L","color":"Blue,White"},"variants":[{"name":"Size","options":["S","M","L"],"prices":[59.99,59.99,64.99],"_id":"67b70692de8de32b32ce938f"}],"status":"ACTIVE","isPublished":true,"createdAt":"2025-02-20T10:40:18.806Z","updatedAt":"2025-02-20T10:43:35.291Z","__v":0}],"total":1,"page":1,"totalPages":1}}aaa@aaa:~/logistics-backend$ curl -X GET "http://localhost:5000/api/products/search?query=dress&cfloral"                       url -X GET "http://localhost:5000/api/products/search?category=FASHION&minPrice=40&maxPrice=50"
 {"success":true,"data":{"products":[{"_id":"67b70692de8de32b32ce938e","storeId":"67b701f6c60e41de8b307d9e","name":"Floral Summer Dress","description":"Beautiful floral print summer dress, perfect for beach days and casual outings","price":49.99,"category":"FASHION","images":["https://example.com/dress1.jpg"],"stock":80,"specifications":{"material":"Cotton","size":"S,M,L","color":"Blue,White"},"variants":[{"name":"Size","options":["S","M","L"],"prices":[59.99,59.99,64.99],"_id":"67b70692de8de32b32ce938f"}],"status":"ACTIVE","isPublished":true,"createdAt":"2025-02-20T10:40:18.806Z","updatedAt":"2025-02-20T10:43:35.291Z","__v":0}],"total":1,"page":1,"totalPages":1}}aaa@aaa:~/logistics-backend$ 
 
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X POST http://localhost:5000/api/users/login \
+-H "Content-Type: application/json" \
+-d '{
+  "email": "jessicaanavheoba@gmail.com",
+  "password": "yourpassword123"
+}'
+{"success":true,"data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2I1YjVhZjdkYmIzZGI3ZTQ1N2Q3ZDgiLCJlbWFpbCI6Implc3NpY2FhbmF2aGVvYmFAZ21haWwuY29tIiwiaWF0IjoxNzQwMDYxNzA1LCJleHAiOjE3NDAxNDgxMDV9.m07BPRmJPEO8cgEdROgIrm9bpls-JVeL6-ETFaDLViE","user":{"_id":"67b5b5af7dbb3db7e457d7d8","email":"jessicaanavheoba@gmail.com","name":"Jessica Anavhe","isEmailVerified":true}}}a@a:~/logistics-backend$ 
+
+
+
+
+a@a:~/logistics-backend$ curl -X POST http://localhost:5000/api/stores/setup \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2I1YjVhZjdkYmIzZGI3ZTQ1N2Q3ZDgiLCJlbWFpbCI6Implc3NpY2FhbmF2aGVvYmFAZ21haWwuY29tIiwiaWF0IjoxNzQwMDYxNzA1LCJleHAiOjE3NDAxNDgxMDV9.m07BPRmJPEO8cgEdROgIrm9bpls-JVeL6-ETFaDLViE" \
+-H "Content-Type: application/json" \
+-d '{
+    "storeName": "Jessica Fashion Hub",
+    "description": "Your premier destination for trendy and affordable fashion.",
+    "category": "FASHION",
+    "contactInfo": {
+        "email": "jessicaanavheoba@gmail.com",
+}'  }   "registrationNumber": "RC123456"ad",
+{"success":true,"data":{"userId":"67b5b5af7dbb3db7e457d7d8","storeName":"Jessica Fashion Hub","description":"Your premier destination for trendy and affordable fashion.","category":"FASHION","status":"PENDING","contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"},"address":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001"},"businessInfo":{"registrationNumber":"RC123456"},"settings":{"isVerified":false,"isFeaturedStore":false,"allowRatings":true},"metrics":{"totalOrders":0,"totalProducts":0,"totalRevenue":0},"_id":"67b73eb0632057b993c5bdc1","createdAt":"2025-02-20T14:39:44.747Z","updatedAt":"2025-02-20T14:39:44.747Z","slug":"jessica-fashion-hub","__v":0}}a@a:~/logistics-backend$ 
+
+
+
+
+
+
+
+
+
+a@a:~/logistics-backend$ # 1. Activate the store
+curl -X POST http://localhost:5000/api/stores/activate \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2I1YjVhZjdkYmIzZGI3ZTQ1N2Q3ZDgiLCJlbWFpbCI6Implc3NpY2FhbmF2aGVvYmFAZ21haWwuY29tIiwiaWF0IjoxNzQwMDYxNzA1LCJleHAiOjE3NDAxNDgxMDV9.m07BPRmJPEO8cgEdROgIrm9bpls-JVeL6-ETFaDLViE"
+
+# 2. Try the public store view again
+curl -X GET http://localhost:5000/api/stores/jessica-fashion-hub
+{"success":true,"data":{"contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"},"address":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001"},"socialLinks":{"instagram":"https://instagram.com/jessicafashionhub","facebook":"https://facebook.com/jessicafashionhub"},"businessInfo":{"registrationNumber":"RC123456"},"settings":{"isVerified":false,"isFeaturedStore":false,"allowRatings":true},"metrics":{"totalOrders":0,"totalProducts":0,"totalRevenue":0},"_id":"67b7410f256d7687d08935fd","userId":"67b5b5af7dbb3db7e457d7d8","storeName":"Jessica Fashion Hub","description":"Updated description - Your premier fashion destination in Lagos","category":"FASHION","status":"ACTIVE","createdAt":"2025-02-20T14:49:51.447Z","updatedAt":"2025-02-20T14:54:24.210Z","slug":"jessica-fashion-hub","__v":0}}{"success":true,"data":{"store":{"contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"},"address":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001"},"socialLinks":{"instagram":"https://instagram.com/jessicafashionhub","facebook":"https://facebook.com/jessicafashionhub"},"_id":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","description":"Updated description - Your premier fashion destination in Lagos","category":"FASHION","status":"ACTIVE","createdAt":"2025-02-20T14:49:51.447Z","updatedAt":"2025-02-20T14:54:24.210Z","slug":"jessica-fashion-hub","__v":0},"isOpen":true}}a@a:~/logistics-backend$ 
+
+
+
+
+a@a:~/logistics-backend$ curl -X GET http://localhost:5000/api/stores/jessica-fashion-hub
+{"success":true,"data":{"store":{"contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"},"address":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001"},"socialLinks":{"instagram":"https://instagram.com/jessicafashionhub","facebook":"https://facebook.com/jessicafashionhub"},"_id":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","description":"Updated description - Your premier fashion destination in Lagos","category":"FASHION","status":"ACTIVE","createdAt":"2025-02-20T14:49:51.447Z","updatedAt":"2025-02-20T14:54:24.210Z","slug":"jessica-fashion-hub","__v":0,"storeUrl":"http://localhost:5000/store/jessica-fashion-hub"},"isOpen":true}}a@a:~/logistics-backend$ 
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X GET http://localhost:5000/api/stores/jessica-fashion-hub
+{"success":true,"data":{"store":{"contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"},"address":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001"},"socialLinks":{"instagram":"https://instagram.com/jessicafashionhub","facebook":"https://facebook.com/jessicafashionhub"},"_id":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","description":"Updated description - Your premier fashion destination in Lagos","category":"FASHION","status":"ACTIVE","createdAt":"2025-02-20T14:49:51.447Z","updatedAt":"2025-02-20T14:54:24.210Z","slug":"jessica-fashion-hub","__v":0,"storeUrl":"http://localhost:5000/store/jessica-fashion-hub"},"isOpen":true}}a@a:~/logcurl -X GET http://localhost:5000/store/jessica-fashion-hubsica-fashion-hub
+Found. Redirecting to /api/stores/jessica-fashion-huba@a:~/logistics-backend$ 
+
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X GET "http://localhost:5000/api/products/store/67b7410f256d7687d08935fd/guest-orderable"
+{"success":true,"data":[]}a@a:~/logistics-backend$ 
+
+
+
+
+
+
+
+
+
+
+
+
+curl -X POST "http://localhost:5000/api/stores/jessica-fashion-hub/orders" \
+-H "Content-Type: application/json" \
+-d '{
+  "guestInfo": {
+    "email": "guest@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "phone": "+2341234567890"
+  },
+  "deliveryAddress": {
+    "street": "123 Guest Street",
+    "city": "Lagos",
+    "state": "Lagos",
+    "country": "Nigeria",
+    "postalCode": "100001",
+    "recipientName": "John Doe",
+    "recipientPhone": "+2341234567890"
+  },
+  "items": [
+    {
+      "productId": "67b70692de8de32b32ce938e",
+      "quantity": 1,
+      "price": 49.99,
+      "name": "Floral Summer Dress",
+      "variantData": [
+        {
+          "name": "Size",
+          "value": "M",
+          "price": 59.99
+        }
+      ]
+    }
+  ],
+  "packageSize": "SMALL",
+  "isFragile": true,
+  "specialInstructions": "Please handle with care"
+}'
+
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X POST "http://localhost:5000/api/stores/jessica-fashion-hub/orders" -H "Content-Type: application/json" -d '{"guestInfo":{"email":"guest@example.com","firstName":"John","lastName":"Doe","phone":"+2341234567890"},"deliveryAddress":{"street":"123 Guest Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"items":[{"productId":"67b70692de8de32b32ce938e","quantity":1,"price":49.99,"name":"Floral Summer Dress","variantData":[{"name":"Size","value":"M","price":59.99}]}],"packageSize":"SMALL","isFragile":true,"specialInstructions":"Please handle with care"}'
+{"success":true,"data":{"order":{"guestInfo":{"email":"guest@example.com","firstName":"John","lastName":"Doe","phone":"+2341234567890"},"pickupAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890"},"deliveryAddress":{"street":"123 Guest Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"packageSize":"SMALL","status":"PENDING","isFragile":true,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-02-23T17:07:55.335Z","items":[{"productId":"67b70692de8de32b32ce938e","storeId":"67b7410f256d7687d08935fd","quantity":1,"price":49.99,"variantData":[{"name":"Size","value":"M","price":59.99,"_id":"67b7616b20507d372067b2f7"}],"_id":"67b7616b20507d372067b2f9"}],"specialInstructions":"Please handle with care","_id":"67b7616b20507d372067b2f2","trackingNumber":"LG-20250220-219D6","estimatedWeight":5,"price":1500,"createdAt":"2025-02-20T17:07:55.357Z","updatedAt":"2025-02-20T17:07:55.704Z","__v":1},"trackingUrl":"undefined/track/LG-20250220-219D6"}}a@a:~/logistics-backend$ 

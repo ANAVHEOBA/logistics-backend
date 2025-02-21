@@ -4,20 +4,31 @@ import { generateTrackingNumber } from '../../utils/tracking.helper';
 import { calculatePrice } from '../../utils/price.helper';
 
 const orderItemSchema = new Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
+  productId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Product',
+    required: true
+  },
+  storeId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Store',
+    required: true
   },
   quantity: {
     type: Number,
     required: true,
     min: 1
   },
-  description: {
-    type: String,
-    trim: true
-  }
+  price: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  variantData: [{
+    name: String,
+    value: String,
+    price: Number
+  }]
 });
 
 const manualAddressSchema = new Schema({
@@ -62,12 +73,33 @@ const orderSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: function(this: IOrderDocument) {
+      return !this.guestInfo;
+    }
+  },
+  guestInfo: {
+    email: {
+      type: String,
+      required: function(this: IOrderDocument) {
+        return !this.userId;
+      }
+    },
+    firstName: String,
+    lastName: String,
+    phone: String
   },
   pickupAddress: {
-    type: Schema.Types.ObjectId,
-    ref: 'Address',
-    required: true
+    type: Schema.Types.Mixed,
+    required: true,
+    validate: {
+      validator: function(v: any) {
+        return (
+          mongoose.Types.ObjectId.isValid(v) || 
+          (v && typeof v === 'object' && v.street && v.city && v.state)
+        );
+      },
+      message: 'Invalid pickup address'
+    }
   },
   deliveryAddress: {
     type: Schema.Types.Mixed,
@@ -152,13 +184,14 @@ function calculateEstimatedDeliveryDate(isExpressDelivery: boolean): Date {
 }
 
 // Pre-validate middleware to set calculated fields
-orderSchema.pre('validate', async function(next) {
+orderSchema.pre('validate', async function(this: IOrderDocument, next) {
   if (this.isNew) {
-    const doc = this as unknown as IOrderDocument;
-    doc.trackingNumber = generateTrackingNumber();
-    doc.estimatedWeight = calculateEstimatedWeight(doc.packageSize as PackageSize);
-    doc.price = await calculatePrice(doc);
-    doc.estimatedDeliveryDate = calculateEstimatedDeliveryDate(doc.isExpressDelivery);
+    if (!this.trackingNumber) {
+      this.trackingNumber = generateTrackingNumber();
+    }
+    this.estimatedWeight = calculateEstimatedWeight(this.packageSize as PackageSize);
+    this.price = await calculatePrice(this);
+    this.estimatedDeliveryDate = calculateEstimatedDeliveryDate(this.isExpressDelivery);
   }
   next();
 });

@@ -2,11 +2,13 @@ import { Request, Response } from 'express';
 import { OrderItemCrud } from './orderItem.crud';
 import { OrderItemStatus, RefundStatus } from './orderItem.model';
 import { StoreCrud } from '../store/store.crud';
+import mongoose from 'mongoose';
 
 interface AuthRequest extends Request {
   user?: {
     userId: string;
     email: string;
+    _id: mongoose.Types.ObjectId;
   };
 }
 

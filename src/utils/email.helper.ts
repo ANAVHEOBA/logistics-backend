@@ -5,8 +5,8 @@ import { config } from '../config/environment';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: config.email.user,
-    pass: config.email.password
+    user: config.email.auth.user,
+    pass: config.email.auth.pass
   },
   debug: true,
   logger: true
@@ -19,7 +19,7 @@ export const sendVerificationEmail = async (
 ): Promise<void> => {
   try {
     const mailOptions = {
-      from: `"Logistics System" <${config.email.user}>`,
+      from: `"Logistics System" <${config.email.auth.user}>`,
       to: email,
       subject: 'Email Verification - Logistics System',
       html: `

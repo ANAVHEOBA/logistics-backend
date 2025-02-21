@@ -1,8 +1,23 @@
 import { UserSchema } from './user.schema';
 import { OrderSchema } from '../order/order.schema';
 import { IUser, IUserDocument, IUserRegistration } from './user.model';
-import { IOrder } from '../order/order.model';
-import mongoose from 'mongoose';
+import { 
+  IOrder, 
+  IDeliveryAddress, 
+  IManualAddress, 
+  IOrderBase,
+  IOrderDocument,
+  OrderStatus,
+  PackageSize,
+  IOrderItemBase,
+  IOrderLean
+} from '../order/order.model';
+import { 
+  IOrderItem,
+  OrderItemStatus,
+  IOrderItemResponse
+} from '../orderItem/orderItem.model';
+import mongoose, { FlattenMaps, Types } from 'mongoose';
 
 export class UserCrud {
   async createUser(userData: IUserRegistration & { 
@@ -20,15 +35,6 @@ export class UserCrud {
   async findByEmail(email: string): Promise<IUser | null> {
     try {
       const user = await UserSchema.findOne({ email }).exec();
-      return user ? this.toUserResponse(user) : null;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async findById(id: string): Promise<IUser | null> {
-    try {
-      const user = await UserSchema.findById(id).exec();
       return user ? this.toUserResponse(user) : null;
     } catch (error) {
       throw error;
@@ -75,10 +81,74 @@ export class UserCrud {
 
   async getUserOrders(userId: string): Promise<IOrder[]> {
     try {
-      return await OrderSchema.find({ userId: new mongoose.Types.ObjectId(userId) })
+      const orders = await OrderSchema.find({ 
+        userId: new mongoose.Types.ObjectId(userId) 
+      })
         .populate('pickupAddress')
         .populate('deliveryAddress')
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean<IOrderLean[]>();
+
+      return orders.map(order => {
+        const deliveryAddress = order.deliveryAddress as FlattenMaps<IManualAddress> | Types.ObjectId;
+        
+        let formattedDeliveryAddress: IDeliveryAddress;
+        if ('_id' in deliveryAddress) {  // Type guard for ObjectId
+          formattedDeliveryAddress = {
+            type: 'saved',
+            savedAddress: deliveryAddress._id.toString()
+          };
+        } else {
+          formattedDeliveryAddress = {
+            type: 'manual',
+            manualAddress: deliveryAddress as FlattenMaps<IManualAddress>
+          };
+        }
+
+        const formattedItems: IOrderItemResponse[] = (order.items || []).map(item => ({
+          _id: new mongoose.Types.ObjectId().toString(),
+          orderId: order._id.toString(),
+          productId: item.productId.toString(),
+          storeId: item.storeId.toString(),
+          name: item.name || '',
+          quantity: item.quantity || 0,
+          description: item.description || '',
+          price: item.price || 0,
+          variantData: item.variantData?.map(variant => ({
+            name: variant.name || '',
+            value: variant.value || '',
+            price: variant.price || 0
+          })) || [],
+          status: OrderItemStatus.PENDING
+        }));
+
+        const pickupAddress = order.pickupAddress as Types.ObjectId | IManualAddress;
+        const pickupAddressStr = '_id' in pickupAddress 
+          ? pickupAddress._id.toString() 
+          : '';
+
+        return {
+          _id: order._id.toString(),
+          userId: order.userId?.toString() || userId,
+          items: formattedItems,
+          pickupAddress: pickupAddressStr,
+          deliveryAddress: formattedDeliveryAddress,
+          packageSize: order.packageSize,
+          status: order.status || 'PENDING',
+          isFragile: Boolean(order.isFragile),
+          isExpressDelivery: Boolean(order.isExpressDelivery),
+          requiresSpecialHandling: Boolean(order.requiresSpecialHandling),
+          estimatedDeliveryDate: order.estimatedDeliveryDate,
+          specialInstructions: order.specialInstructions || '',
+          trackingNumber: order.trackingNumber || '',
+          estimatedWeight: order.estimatedWeight || 0,
+          price: order.price || 0,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          deliveryDate: order.deliveryDate,
+          statusNotes: order.statusNotes || ''
+        };
+      });
     } catch (error) {
       throw error;
     }
@@ -98,5 +168,12 @@ export class UserCrud {
       ...userObject,
       _id: userObject._id.toString(),
     } as IUser;
+  }
+
+  public toUser(userDoc: IUserDocument): IUser {
+    return {
+      ...userDoc.toObject(),
+      _id: userDoc._id.toString()
+    };
   }
 }

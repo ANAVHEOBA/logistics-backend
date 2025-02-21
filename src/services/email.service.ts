@@ -11,8 +11,8 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',  // Use 'gmail' instead of custom SMTP settings
       auth: {
-        user: config.email.user,
-        pass: config.email.password
+        user: config.email.auth.user,
+        pass: config.email.auth.pass
       },
       debug: true, // Enable debug logs
       logger: true // Enable logger
@@ -42,7 +42,7 @@ export class EmailService {
     const additionalNotes = order.statusNotes ? `<p><strong>Additional Notes:</strong> ${order.statusNotes}</p>` : '';
 
     const mailOptions = {
-      from: `Logistics System <${config.email.user}>`,
+      from: `Logistics System <${config.email.auth.user}>`,
       to: user.email,
       subject: `Order Status Update - ${order.trackingNumber}`,
       html: `
@@ -71,7 +71,7 @@ export class EmailService {
 
   async sendOrderConfirmation(user: IUser, order: IOrder): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.user}>`,
+      from: `Logistics System <${config.email.auth.user}>`,
       to: user.email,
       subject: `Order Confirmation - ${order.trackingNumber}`,
       html: `
@@ -105,23 +105,22 @@ export class EmailService {
       return 'Saved address will be used for delivery';
     }
     
-    const manualAddress = address.manualAddress;
     return `
-      ${manualAddress.street},
-      ${manualAddress.city},
-      ${manualAddress.state},
-      ${manualAddress.country},
-      ${manualAddress.postalCode}
+      ${address.street},
+      ${address.city},
+      ${address.state},
+      ${address.country},
+      ${address.postalCode}
       <br>
-      Recipient: ${manualAddress.recipientName}
+      Recipient: ${address.recipientName}
       <br>
-      Phone: ${manualAddress.recipientPhone}
+      Phone: ${address.recipientPhone}
     `;
   }
 
   async sendStoreOrderNotification(storeEmail: string, order: IOrder, items: IOrderItem[]): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.user}>`,
+      from: `Logistics System <${config.email.auth.user}>`,
       to: storeEmail,
       subject: `New Order Received - ${order.trackingNumber}`,
       html: `
@@ -157,7 +156,7 @@ export class EmailService {
 
   async sendDeliveryConfirmation(user: IUser, order: IOrder): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.user}>`,
+      from: `Logistics System <${config.email.auth.user}>`,
       to: user.email,
       subject: `Delivery Confirmation - ${order.trackingNumber}`,
       html: `
@@ -178,6 +177,36 @@ export class EmailService {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
       console.error('Failed to send delivery confirmation:', error);
+      throw error;
+    }
+  }
+
+  async sendGuestOrderConfirmation(email: string, order: IOrder): Promise<void> {
+    const mailOptions = {
+      from: `Logistics System <${config.email.auth.user}>`,
+      to: email,
+      subject: `Order Confirmation - ${order.trackingNumber}`,
+      html: `
+        <h2>Order Confirmation</h2>
+        <p>Thank you for your order!</p>
+        <p><strong>Order Details:</strong></p>
+        <ul>
+          <li>Tracking Number: ${order.trackingNumber}</li>
+          <li>Package Size: ${order.packageSize}</li>
+          <li>Price: ₦${order.price}</li>
+          <li>Estimated Delivery: ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</li>
+        </ul>
+        <p><strong>Delivery Address:</strong></p>
+        <p>${this.formatAddress(order.deliveryAddress)}</p>
+        <p>Track your order at: ${process.env.FRONTEND_URL}/track/${order.trackingNumber}</p>
+        <p>Thank you for choosing our service!</p>
+      `
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send guest order confirmation:', error);
       throw error;
     }
   }

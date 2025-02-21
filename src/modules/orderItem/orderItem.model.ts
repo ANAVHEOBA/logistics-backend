@@ -1,11 +1,14 @@
 import { Document, Types } from 'mongoose';
 
-export interface IOrderItem extends Document {
-  orderId: Types.ObjectId;
-  productId: Types.ObjectId;
-  storeId: Types.ObjectId;
+// Base interface for shared properties
+export interface IOrderItemBase {
+  orderId: Types.ObjectId | string;
+  productId: Types.ObjectId | string;
+  storeId: Types.ObjectId | string;
   quantity: number;
   price: number;
+  name: string;
+  description?: string;
   variantData?: {
     name: string;
     value: string;
@@ -14,7 +17,19 @@ export interface IOrderItem extends Document {
   status: OrderItemStatus;
   refundStatus?: RefundStatus;
   refundReason?: string;
-  name: string;
+}
+
+// Mongoose Document interface
+export interface IOrderItem extends Document, IOrderItemBase {
+  _id: Types.ObjectId;
+}
+
+// Plain object interface (for API responses)
+export interface IOrderItemResponse extends Omit<IOrderItemBase, 'orderId' | 'productId' | 'storeId'> {
+  _id: string;
+  orderId: string;
+  productId: string;
+  storeId: string;
 }
 
 export enum OrderItemStatus {

@@ -293,7 +293,7 @@ export class AdminController {
         // Send status update email
         const user = await this.userCrud.findById(order.userId);
         if (user) {
-          await this.emailService.sendOrderStatusUpdate(user, order);
+          await this.emailService.sendOrderStatusUpdate(this.userCrud.toUser(user), order);
           console.log(`Status update email sent to ${user.email} for order ${order.trackingNumber}`);
         }
       } catch (emailError) {

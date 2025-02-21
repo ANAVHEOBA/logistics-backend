@@ -19,7 +19,19 @@ const createProductSchema = Joi.object({
       prices: Joi.array().items(Joi.number().min(0))
     })
   ),
-  isPublished: Joi.boolean()
+  isPublished: Joi.boolean(),
+  guestOrderEnabled: Joi.boolean(),
+  minOrderQuantity: Joi.number().integer().min(1),
+  maxOrderQuantity: Joi.number().integer().min(1),
+  shippingInfo: Joi.object({
+    weight: Joi.number().min(0),
+    dimensions: Joi.object({
+      length: Joi.number().min(0),
+      width: Joi.number().min(0),
+      height: Joi.number().min(0)
+    }),
+    requiresSpecialHandling: Joi.boolean()
+  })
 });
 
 const updateProductSchema = Joi.object({
