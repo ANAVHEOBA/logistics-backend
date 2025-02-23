@@ -6,13 +6,14 @@ import { Types } from 'mongoose';
 import { OrderCrud } from '../order/order.crud';
 import { EmailService } from '../../services/email.service';  
 import { ICreateGuestOrderRequest } from '../order/order.model';
+import mongoose from 'mongoose';
 
-// Update AuthRequest to match auth.middleware.ts
+// First, update the AuthRequest interface to be more explicit
 interface AuthRequest extends Request {
   user?: {
     userId: string;
     email: string;
-    _id: Types.ObjectId;
+    _id: Types.ObjectId;  // Using Types from mongoose
   };
 }
 
@@ -40,7 +41,6 @@ export class StoreController {
         return;
       }
       
-      // Check if user already has a store
       const existingStore = await this.storeCrud.findByUserId(userId);
       if (existingStore) {
         res.status(400).json({
@@ -63,7 +63,7 @@ export class StoreController {
       // Create store with initial status
       const storeData = {
         ...req.body,
-        userId,
+        userId: new mongoose.Types.ObjectId(userId),
         status: StoreStatus.PENDING,
         settings: {
           isVerified: false,
@@ -94,6 +94,7 @@ export class StoreController {
 
   getMyStore = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
+      // Use userId instead of _id
       const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({
@@ -102,7 +103,11 @@ export class StoreController {
         });
         return;
       }
+
+      console.log('Searching for store with userId:', userId);
       const store = await this.storeCrud.findByUserId(userId);
+      
+      console.log('Store found:', store);
 
       if (!store) {
         res.status(404).json({
@@ -120,7 +125,8 @@ export class StoreController {
       console.error('Get store error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get store'
+        message: 'Failed to get store',
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   };

@@ -1,4 +1,5 @@
 import { Store, IStore, StoreStatus } from './store.model';
+import mongoose from 'mongoose';
 
 export class StoreCrud {
   async createStore(storeData: Partial<IStore>): Promise<IStore> {
@@ -7,7 +8,17 @@ export class StoreCrud {
   }
 
   async findByUserId(userId: string): Promise<IStore | null> {
-    return await Store.findOne({ userId });
+    console.log('Finding store for userId:', userId);
+    try {
+      const objectId = new mongoose.Types.ObjectId(userId);
+      console.log('Query:', { userId: objectId });
+      const store = await Store.findOne({ userId: objectId });
+      console.log('Store found:', store);
+      return store;
+    } catch (error) {
+      console.error('Error finding store:', error);
+      throw error;
+    }
   }
 
   async findByStoreName(storeName: string): Promise<IStore | null> {
