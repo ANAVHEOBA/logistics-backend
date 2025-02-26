@@ -6,6 +6,7 @@ import orderRouter from './modules/order/order.router';
 import adminRouter from './modules/admin/admin.router';
 import storeRouter from './modules/store/store.router';
 import productRouter from './modules/product/product.router';
+import consumerRouter from './modules/consumer/consumer.router';
 import { errorHandler } from './middleware/error.middleware';
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/api/orders', orderRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/stores', storeRouter);
 app.use('/api/products', productRouter);
+app.use('/api/consumers', consumerRouter);
 
 // Store frontend routes
 app.get('/store/:slug', (req, res) => {

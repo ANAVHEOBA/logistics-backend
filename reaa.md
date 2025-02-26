@@ -156,3 +156,51 @@ a@a:~/logistics-backend$ curl -X PATCH "http://localhost:5000/api/admin/orders/6
   "notes": "Package successfully delivered to recipient"
 }'
 {"success":true,"data":{"order":{"guestInfo":{"email":"guest@example.com","firstName":"John","lastName":"Doe","phone":"+2341234567890"},"_id":"67b7616b20507d372067b2f2","pickupAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890"},"deliveryAddress":{"street":"123 Guest Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"packageSize":"SMALL","status":"DELIVERED","isFragile":true,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-02-23T17:07:55.335Z","items":[{"productId":"67b70692de8de32b32ce938e","storeId":"67b7410f256d7687d08935fd","quantity":1,"price":49.99,"variantData":[{"name":"Size","value":"M","price":59.99,"_id":"67b7616b20507d372067b2f7"}],"_id":"67b7616b20507d372067b2f9"}],"specialInstructions":"Please handle with care","trackingNumber":"LG-20250220-219D6","estimatedWeight":5,"price":1500,"createdAt":"2025-02-20T17:07:55.357Z","updatedAt":"2025-02-20T17:50:49.360Z","__v":1},"emailSent":true}}a@a:~/logistics-backend$ 
+
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X GET \
+  http://localhost:5000/api/admin/consumers \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwNTAyMzAyLCJleHAiOjE3NDA1ODg3MDJ9.O1URRKiM-ggKKXF8ugZpGpDrd3VSRHoFcAaPUNJkztc"
+{"success":true,"data":{"consumers":[{"preferences":{"favoriteStores":[],"preferredCategories":[]},"_id":"67bdba50fcb27218d15deab7","email":"anavheobawisdom@gmail.com","password":"$2b$10$65XAQBscgQGyiWF.6pMRuuTToKGgFPcleAcjrUy4TgkUsYmCBkoTC","firstName":"Wisdom","lastName":"Anavheoba","phone":"+1234567890","isEmailVerified":true,"verificationCode":"","verificationCodeExpiry":"2025-02-25T12:42:24.238Z","status":"active","createdAt":"2025-02-25T12:40:48.683Z","updatedAt":"2025-02-25T14:37:49.417Z","__v":0,"lastLoginAt":"2025-02-25T14:37:49.413Z"},{"preferences":{"favoriteStores":[],"preferredCategories":[]},"_id":"67bdac4b8596f8febbf86300","email":"momoduabraham413@gmail.com","password":"$2b$10$Ft/qXP7iM1LvnaQJY4Xn7.zqlvZgybHISoDOkiUrxarufLA1gHSCu","firstName":"Abraham","lastName":"Momodu","phone":"+1234567890","isEmailVerified":false,"verificationCode":"681544","verificationCodeExpiry":"2025-02-25T11:50:59.395Z","status":"inactive","createdAt":"2025-02-25T11:40:59.398Z","updatedAt":"2025-02-25T11:40:59.398Z","__v":0},{"preferences":{"favoriteStores":[],"preferredCategories":[]},"_id":"67bdabd68596f8febbf862fd","email":"consumer@example.com","password":"$2b$10$7LSd9mjW56yinyF1wePbV.H6ybSDcQrR4w2Q8ls7RmYbBTWZERqm2","firstName":"John","lastName":"Doe","phone":"+1234567890","isEmailVerified":false,"verificationCode":"732465","verificationCodeExpiry":"2025-02-25T11:49:02.330Z","status":"inactive","createdAt":"2025-02-25T11:39:02.350Z","updatedAt":"2025-02-25T11:39:02.350Z","__v":0}],"pagination":{"total":3,"page":1,"limit":10,"pages":1}}}a@a:~/logistcurl -X GET \curl -X GET \
+  http://localhost:5000/api/admin/consumers/67bdba50fcb27218d15deab7 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwNTAyMzAyLCJleHAiOjE3NDA1ODg3MDJ9.O1URRKiM-ggKKXF8ugZpGpDrd3VSRHoFcAaPUNJkztc"
+{"success":true,"data":{"preferences":{"favoriteStores":[],"preferredCategories":[]},"_id":"67bdba50fcb27218d15deab7","email":"anavheobawisdom@gmail.com","password":"$2b$10$65XAQBscgQGyiWF.6pMRuuTToKGgFPcleAcjrUy4TgkUsYmCBkoTC","firstName":"Wisdom","lastName":"Anavheoba","phone":"+1234567890","isEmailVerified":true,"verificationCode":"","verificationCodeExpiry":"2025-02-25T12:42:24.238Z","status":"active","createdAt":"2025-02-25T12:40:48.683Z","updatedAt":"2025-02-25T14:37:49.417Z","__v":0,"lastLoginAt":"2025-02-25T14:37:49.413Z"}}a@acurl -X GET \backend$ curl -X GET \
+  http://localhost:5000/api/admin/consumers/67bdba50fcb27218d15deab7/orders \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwNTAyMzAyLCJleHAiOjE3NDA1ODg3MDJ9.O1URRKiM-ggKKXF8ugZpGpDrd3VSRHoFcAaPUNJkztc"
+{"success":true,"data":{"orders":[{"guestInfo":{"email":"placeholder@example.com","firstName":"placeholder","lastName":"placeholder","phone":"placeholder"},"_id":"67bde7e65646839d00bf2f7e","userId":"67bdba50fcb27218d15deab7","pickupAddress":{"street":"456 Store Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001"},"deliveryAddress":{"street":"123 Main Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"packageSize":"MEDIUM","status":"PENDING","price":2000,"isFragile":false,"isExpressDelivery":false,"requiresSpecialHandling":false,"items":[{"productId":"67b70692de8de32b32ce938e","storeId":"67b7410f256d7687d08935fd","quantity":2,"price":99.98,"variantData":[],"_id":"67bde7e65646839d00bf2f7f"}],"specialInstructions":"Please handle with care","trackingNumber":"LG-20250225-CBA26","estimatedWeight":20,"estimatedDeliveryDate":"2025-02-28T15:55:18.191Z","createdAt":"2025-02-25T15:55:18.206Z","updatedAt":"2025-02-25T15:55:18.206Z","__v":0}],"pagination":{"total":1,"page":1,"limit":10,"pages":1}}}a@a:~/logisa@a:~/logistics-backend$ curl -X PATCH \
+  http://localhost:5000/api/admin/consumers/67bdba50fcb27218d15deab7/status \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwNTAyMzAyLCJleHAiOjE3NDA1ODg3MDJ9.O1URRKiM-ggKKXF8ugZpGpDrd3VSRHoFcAaPUNJkztc" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive"
+  }'
+{"success":true,"data":{"preferences":{"favoriteStores":[],"preferredCategories":[]},"_id":"67bdba50fcb27218d15deab7","email":"anavheobawisdom@gmail.com","password":"$2b$10$65XAQBscgQGyiWF.6pMRuuTToKGgFPcleAcjrUy4TgkUsYmCBkoTC","firstName":"Wisdom","lastName":"Anavheoba","phone":"+1234567890","isEmailVerified":true,"verificationCode":"","verificationCodeExpiry":"2025-02-25T12:42:24.238Z","status":"inactive","createdAt":"2025-02-25T12:40:48.683Z","updatedAt":"2025-02-25T16:55:21.286Z","__v":0,"lastLoginAt":"2025-02-25T14:37:49.413Z"}}acurl -X GET \s-backend$ curl -X GET \
+  http://localhost:5000/api/admin/consumers/stats \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwNTAyMzAyLCJleHAiOjE3NDA1ODg3MDJ9.O1URRKiM-ggKKXF8ugZpGpDrd3VSRHoFcAaPUNJkztc"
+
+
+
+
+
+
+
+  a@a:~/logistics-backend$ curl -X GET   http://localhost:5000/api/admin/consumers/stats   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwNTAyMzAyLCJleHAiOjE3NDA1ODg3MDJ9.O1URRKiM-ggKKXF8ugZpGpDrd3VSRHoFcAaPUNJkztc"
+{"success":true,"data":{"total":3,"active":0,"inactive":3,"newToday":3,"newThisWeek":3,"newThisMonth":3}}a@a:~/logistics-backend$ 
+
+
+
+
+
+a@a:~/logistics-backend$ curl -X PATCH \ \
+  http://localhost:5000/api/admin/orders/67bde7e65646839d00bf2f7e/status \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQwNTAyMzAyLCJleHAiOjE3NDA1ODg3MDJ9.O1URRKiM-ggKKXF8ugZpGpDrd3VSRHoFcAaPUNJkztc" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "IN_TRANSIT",
+    "notes": "Package is now in transit to delivery location"
+  }'
+{"success":true,"data":{"order":{"guestInfo":{"email":"placeholder@example.com","firstName":"placeholder","lastName":"placeholder","phone":"placeholder"},"_id":"67bde7e65646839d00bf2f7e","userId":"67bdba50fcb27218d15deab7","pickupAddress":{"street":"456 Store Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001"},"deliveryAddress":{"street":"123 Main Street","city":"Lagos","state":"Lagos","country":"Nigeria","postalCode":"100001","recipientName":"John Doe","recipientPhone":"+2341234567890"},"packageSize":"MEDIUM","status":"IN_TRANSIT","price":2000,"isFragile":false,"isExpressDelivery":false,"requiresSpecialHandling":false,"items":[{"productId":"67b70692de8de32b32ce938e","storeId":"67b7410f256d7687d08935fd","quantity":2,"price":99.98,"variantData":[],"_id":"67bde7e65646839d00bf2f7f"}],"specialInstructions":"Please handle with care","trackingNumber":"LG-20250225-CBA26","estimatedWeight":20,"estimatedDeliveryDate":"2025-02-28T15:55:18.191Z","createdAt":"2025-02-25T15:55:18.206Z","updatedAt":"2025-02-25T17:26:58.816Z","__v":0},"emailSent":true}}a@a:~/logistics-backend$ 

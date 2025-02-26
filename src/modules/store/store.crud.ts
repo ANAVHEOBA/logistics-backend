@@ -1,6 +1,18 @@
 import { Store, IStore, StoreStatus } from './store.model';
 import mongoose from 'mongoose';
 
+interface ListStoresParams {
+  filter?: Record<string, any>;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  city?: string;
+  state?: string;
+  country?: string;
+  minRating?: number;
+}
+
 export class StoreCrud {
   async createStore(storeData: Partial<IStore>): Promise<IStore> {
     const store = new Store(storeData);
@@ -82,5 +94,71 @@ export class StoreCrud {
       },
       { new: true }
     );
+  }
+
+  async listStores({
+    filter = {},
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    city,
+    state,
+    country,
+    minRating
+  }: ListStoresParams) {
+    const skip = (page - 1) * limit;
+    const sort: Record<string, 1 | -1> = {};
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    // Combine with existing filter
+    const finalFilter: Record<string, any> = {
+      ...filter,
+      status: StoreStatus.ACTIVE
+    };
+
+    // Add location filters if provided
+    if (city) {
+      finalFilter['address.city'] = { $regex: city, $options: 'i' };
+    }
+    if (state) {
+      finalFilter['address.state'] = { $regex: state, $options: 'i' };
+    }
+    if (country) {
+      finalFilter['address.country'] = { $regex: country, $options: 'i' };
+    }
+
+    // Add rating filter if provided
+    if (minRating) {
+      finalFilter['metrics.averageRating'] = { $gte: Number(minRating) };
+    }
+
+    const stores = await Store
+      .find(finalFilter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .select('-userId -settings.privateData');
+
+    const total = await Store.countDocuments(finalFilter);
+
+    return {
+      stores,
+      pagination: {
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        hasMore: page * limit < total
+      }
+    };
+  }
+
+  async findById(storeId: string): Promise<IStore | null> {
+    try {
+      return await Store.findById(storeId);
+    } catch (error) {
+      console.error('Error finding store by ID:', error);
+      throw error;
+    }
   }
 } 

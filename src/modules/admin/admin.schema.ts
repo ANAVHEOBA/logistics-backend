@@ -26,7 +26,29 @@ const adminSchema = new Schema({
   },
   lastLoginAt: {
     type: Date
-  }
+  },
+  assignedOrders: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Order'
+  }],
+  activeOrderCount: {
+    type: Number,
+    default: 0
+  },
+  orderHistory: [{
+    orderId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Order',
+      required: true
+    },
+    action: String,
+    status: String,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    notes: String
+  }]
 }, {
   timestamps: true
 });

@@ -79,7 +79,8 @@ export interface IOrderDocument extends Document, IOrderBase {
 
 export interface IOrder {
   _id: string;
-  userId: string;
+  userId?: string;  // Make userId optional
+  guestInfo?: IGuestInfo;  // Add guestInfo
   trackingNumber: string;
   pickupAddress: string | IManualAddress;
   deliveryAddress: IDeliveryAddress;
@@ -163,4 +164,24 @@ export interface IOrderLean extends Omit<IOrderDocument, keyof Document | 'items
   statusNotes?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Update the IConsumerOrderRequest interface
+export interface IConsumerOrderRequest {
+  storeId: string;
+  items: {
+    productId: string;
+    quantity: number;
+    variantData?: {
+      name: string;
+      value: string;
+    }[];
+  }[];
+  deliveryAddress: IDeliveryAddress;
+  pickupAddress: IDeliveryAddress;  // Add this
+  packageSize: PackageSize;         // Add this
+  isFragile?: boolean;             // Add this
+  isExpressDelivery?: boolean;
+  requiresSpecialHandling?: boolean; // Add this
+  specialInstructions?: string;
 }

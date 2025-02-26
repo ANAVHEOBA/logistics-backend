@@ -5,10 +5,12 @@ import {
   ICreateOrderRequest, 
   ICreateGuestOrderRequest,
   OrderStatus,
-  IOrderItemBase 
+  IOrderItemBase,
+  IConsumerOrderRequest
 } from './order.model';
 import mongoose from 'mongoose';
 import { OrderItem } from '../orderItem/orderItem.schema';
+import { ProductCrud } from '../product/product.crud';
 
 interface OrderFilters {
   status?: OrderStatus;
@@ -33,6 +35,12 @@ interface OrderStats {
 }
 
 export class OrderCrud {
+  private productCrud: ProductCrud;
+
+  constructor() {
+    this.productCrud = new ProductCrud();
+  }
+
   async createOrder(userId: string, orderData: ICreateOrderRequest): Promise<IOrder> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -387,6 +395,77 @@ export class OrderCrud {
     const date = new Date();
     date.setDate(date.getDate() + (isExpressDelivery ? 1 : 3)); // Express delivery is 1 day, standard is 3 days
     return date;
+  }
+
+  async createConsumerOrder(
+    consumerId: string,
+    storeId: string,
+    orderData: IConsumerOrderRequest
+  ): Promise<IOrder> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // 1. Reserve product stock
+      for (const item of orderData.items) {
+        const success = await this.productCrud.reserveProductStock(
+          item.productId,
+          item.quantity
+        );
+        if (!success) {
+          throw new Error(`Failed to reserve stock for product ${item.productId}`);
+        }
+      }
+
+      // 2. Get product details and calculate prices
+      const productDetails = await Promise.all(
+        orderData.items.map(item => 
+          this.productCrud.getProductById(item.productId)
+        )
+      );
+
+      // 3. Create order items with product details
+      const orderItems = orderData.items.map((item, index) => ({
+        productId: item.productId,
+        storeId: storeId,
+        quantity: item.quantity,
+        price: productDetails[index]!.price * item.quantity,
+        name: productDetails[index]!.name,
+        variantData: item.variantData
+      }));
+
+      // 4. Create the order with proper address handling
+      const order = await OrderSchema.create([{
+        userId: consumerId,
+        storeId: storeId,
+        items: orderItems,
+        pickupAddress: orderData.pickupAddress.manualAddress,
+        deliveryAddress: orderData.deliveryAddress.manualAddress,
+        isExpressDelivery: orderData.isExpressDelivery || false,
+        specialInstructions: orderData.specialInstructions,
+        status: 'PENDING',
+        price: orderItems.reduce((sum, item) => sum + item.price, 0),
+        packageSize: orderData.packageSize,
+        isFragile: orderData.isFragile || false,
+        requiresSpecialHandling: orderData.requiresSpecialHandling || false,
+        guestInfo: {
+          email: 'placeholder@example.com',
+          firstName: 'placeholder',
+          lastName: 'placeholder',
+          phone: 'placeholder'
+        },
+        isConsumerOrder: true
+      }], { session });
+
+      await session.commitTransaction();
+      return this.toOrderResponse(order[0]);
+
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   }
 
   private toOrderResponse(order: IOrderDocument): IOrder {

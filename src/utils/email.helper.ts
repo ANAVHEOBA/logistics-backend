@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { config } from '../config/environment';
+import { sendEmail } from '../services/email.service';
 
 // Create reusable transporter object using Gmail
 const transporter = nodemailer.createTransport({
@@ -15,33 +16,32 @@ const transporter = nodemailer.createTransport({
 export const sendVerificationEmail = async (
   email: string,
   otp: string,
-  name: string
+  firstName: string
 ): Promise<void> => {
-  try {
-    const mailOptions = {
-      from: `"Logistics System" <${config.email.auth.user}>`,
-      to: email,
-      subject: 'Email Verification - Logistics System',
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>Hello ${name},</h2>
-          <p>Thank you for registering with our Logistics System.</p>
-          <p>Your verification code is: <strong style="font-size: 20px;">${otp}</strong></p>
-          <p>This code will expire in 10 minutes.</p>
-          <p>If you didn't request this verification, please ignore this email.</p>
-        </div>
-      `
-    };
+  const subject = 'Verify Your Email';
+  const html = `
+    <h1>Hello ${firstName},</h1>
+    <p>Your verification code is: <strong>${otp}</strong></p>
+    <p>This code will expire in 10 minutes.</p>
+  `;
+  
+  await sendEmail(email, subject, html);
+};
 
-    // Add error logging
-    console.log('Attempting to send email to:', email);
-    
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-  } catch (error) {
-    console.error('Email sending error:', error);
-    throw new Error('Failed to send verification email');
-  }
+export const sendPasswordResetEmail = async (
+  email: string,
+  token: string,
+  firstName: string
+): Promise<void> => {
+  const subject = 'Password Reset Request';
+  const html = `
+    <h1>Hello ${firstName},</h1>
+    <p>Your password reset code is: <strong>${token}</strong></p>
+    <p>This code will expire in 10 minutes.</p>
+    <p>If you didn't request this, please ignore this email.</p>
+  `;
+  
+  await sendEmail(email, subject, html);
 };
 
 // Verify transporter connection

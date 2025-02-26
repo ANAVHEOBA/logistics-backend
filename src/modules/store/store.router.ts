@@ -5,6 +5,9 @@ import { authMiddleware } from '../../middleware/auth.middleware';
 const router = express.Router();
 const storeController = new StoreController();
 
+// Add this new public route at the top
+router.get('/list', storeController.listStores);  // New endpoint for listing stores
+
 // Protected routes (auth required) - Move these BEFORE the :slug routes
 router.get('/my-store', authMiddleware, storeController.getMyStore);
 router.post('/setup', authMiddleware, storeController.createStore);

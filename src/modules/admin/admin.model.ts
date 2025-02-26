@@ -1,4 +1,5 @@
 import { Document, Types } from 'mongoose';
+import { OrderStatus } from '../order/order.model';
 
 export interface IAdmin {
   _id: string;
@@ -7,6 +8,15 @@ export interface IAdmin {
   name: string;
   role: 'admin';
   lastLoginAt?: Date;
+  assignedOrders: string[]; // Array of order IDs
+  activeOrderCount: number;
+  orderHistory: {
+    orderId: string;
+    action: string;
+    status: OrderStatus;
+    timestamp: Date;
+    notes?: string;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,4 +37,19 @@ export interface IAdminResponse {
   name: string;
   role: string;
   lastLoginAt?: Date;
+  activeOrderCount: number;
+}
+
+export interface IOrderStatusUpdate {
+  orderId: string;
+  adminId: string;
+  status: OrderStatus;
+  notes?: string;
+}
+
+export interface IConsumerStatusUpdate {
+  consumerId: string;
+  status: 'active' | 'inactive';
+  reason?: string;
+  adminId: string;
 } 

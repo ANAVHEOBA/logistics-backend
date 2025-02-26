@@ -534,4 +534,61 @@ export class StoreController {
     // Implement store hours check logic here
     return true; // Placeholder
   }
+
+  listStores = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { 
+        page = 1, 
+        limit = 10, 
+        search, 
+        category,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        city,
+        state,
+        country,
+        minRating
+      } = req.query;
+
+      const filter: any = {
+        status: StoreStatus.ACTIVE
+      };
+
+      // Add search filter
+      if (search) {
+        filter.$or = [
+          { storeName: { $regex: search as string, $options: 'i' } },
+          { description: { $regex: search as string, $options: 'i' } }
+        ];
+      }
+
+      // Add category filter
+      if (category) {
+        filter.category = category;
+      }
+
+      const stores = await this.storeCrud.listStores({
+        filter,
+        page: Number(page),
+        limit: Number(limit),
+        sortBy: sortBy as string,
+        sortOrder: sortOrder as 'asc' | 'desc',
+        city: city as string,
+        state: state as string,
+        country: country as string,
+        minRating: minRating ? Number(minRating) : undefined
+      });
+
+      res.status(200).json({
+        success: true,
+        data: stores
+      });
+    } catch (error) {
+      console.error('List stores error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to list stores'
+      });
+    }
+  };
 } 
