@@ -8,8 +8,8 @@ import {
   IOrderItemBase,
   IConsumerOrderRequest
 } from './order.model';
-import mongoose from 'mongoose';
 import { OrderItem } from '../orderItem/orderItem.schema';
+import mongoose, { Model } from 'mongoose';
 import { ProductCrud } from '../product/product.crud';
 
 interface OrderFilters {
@@ -36,9 +36,11 @@ interface OrderStats {
 
 export class OrderCrud {
   private productCrud: ProductCrud;
+  private model: Model<any>; // Define the model property
 
   constructor() {
     this.productCrud = new ProductCrud();
+    this.model = OrderSchema; // Assign the Mongoose model to the model property
   }
 
   async createOrder(userId: string, orderData: ICreateOrderRequest): Promise<IOrder> {
@@ -490,5 +492,23 @@ export class OrderCrud {
         storeId: typeof item.storeId === 'object' ? item.storeId.toString() : item.storeId
       }))
     } as IOrder;
+  }
+
+
+
+  public async findConsumerOrders(consumerId: string): Promise<any[]> {
+    return this.model.find({ consumerId });
+  }
+
+  public async findConsumerOrderById(orderId: string, consumerId: string): Promise<any | null> {
+    return this.model.findOne({ _id: orderId, consumerId });
+  }
+
+  public async cancelConsumerOrder(orderId: string, consumerId: string): Promise<any | null> {
+    return this.model.findOneAndUpdate(
+      { _id: orderId, consumerId },
+      { status: 'CANCELLED' },
+      { new: true }
+    );
   }
 }

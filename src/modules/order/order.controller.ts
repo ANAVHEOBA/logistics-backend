@@ -50,9 +50,17 @@ export class OrderController {
 
   public async createOrder(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user!.userId;
+      const userId = req.user?.userId; // Safely access userId
+      if (!userId) {
+        res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+        return;
+      }
+  
       const orderData = req.body as ICreateOrderRequest;
-
+  
       // Verify pickup address ownership
       const pickupAddress = await this.addressCrud.findById(orderData.pickupAddress, userId);
       if (!pickupAddress) {
@@ -62,11 +70,11 @@ export class OrderController {
         });
         return;
       }
-
+  
       // Handle delivery address based on type
       let deliveryAddressForOrder: string | IManualAddress;
       let deliveryAddressDetails: any;
-
+  
       if (orderData.deliveryAddress.type === 'saved') {
         if (!orderData.deliveryAddress.savedAddress) {
           res.status(400).json({
@@ -75,8 +83,9 @@ export class OrderController {
           });
           return;
         }
+  
         const savedDeliveryAddress = await this.addressCrud.findByIdWithoutUser(
-          orderData.deliveryAddress.savedAddress
+          orderData.deliveryAddress.savedAddress!
         );
         if (!savedDeliveryAddress) {
           res.status(400).json({
@@ -85,6 +94,7 @@ export class OrderController {
           });
           return;
         }
+  
         deliveryAddressForOrder = savedDeliveryAddress._id;
         deliveryAddressDetails = savedDeliveryAddress;
       } else {
@@ -95,30 +105,31 @@ export class OrderController {
           });
           return;
         }
+  
         deliveryAddressForOrder = orderData.deliveryAddress.manualAddress;
         deliveryAddressDetails = orderData.deliveryAddress.manualAddress;
       }
-
+  
       // Create order with modified request data
       const modifiedOrderData: ICreateOrderRequest = {
         ...orderData,
         pickupAddress: pickupAddress._id,
         deliveryAddress: {
           type: orderData.deliveryAddress.type,
-          ...(orderData.deliveryAddress.type === 'saved' ? 
-            { savedAddress: deliveryAddressForOrder as string } : 
-            { manualAddress: deliveryAddressForOrder as IManualAddress })
+          ...(orderData.deliveryAddress.type === 'saved'
+            ? { savedAddress: deliveryAddressForOrder as string }
+            : { manualAddress: deliveryAddressForOrder as IManualAddress })
         }
       };
-
+  
       const order = await this.orderCrud.createOrder(userId, modifiedOrderData);
-
+  
       // Send order confirmation email
       const user = await this.userCrud.findById(userId);
       if (user) {
         await this.emailService.sendOrderConfirmation(this.userCrud.toUser(user), order);
       }
-
+  
       res.status(201).json({
         success: true,
         data: {
@@ -127,7 +138,6 @@ export class OrderController {
           deliveryAddressDetails
         }
       });
-
     } catch (error) {
       console.error('Create order error:', error);
       res.status(500).json({

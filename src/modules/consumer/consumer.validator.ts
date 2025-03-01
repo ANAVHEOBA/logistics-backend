@@ -28,10 +28,17 @@ export const validateConsumerRegistration = async (
     await consumerRegistrationSchema.validateAsync(req.body);
     next();
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    if (error instanceof Joi.ValidationError) {
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'An unexpected error occurred'
+      });
+    }
   }
 };
 
@@ -44,10 +51,17 @@ export const validateProfileUpdate = async (
     await profileUpdateSchema.validateAsync(req.body);
     next();
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    if (error instanceof Joi.ValidationError) {
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'An unexpected error occurred'
+      });
+    }
   }
 };
 
@@ -60,9 +74,16 @@ export const validatePasswordReset = async (
     await passwordResetSchema.validateAsync(req.body);
     next();
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    if (error instanceof Joi.ValidationError) {
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'An unexpected error occurred'
+      });
+    }
   }
-}; 
+};
