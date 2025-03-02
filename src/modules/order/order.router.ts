@@ -43,7 +43,8 @@ router.post(
 // Tracking route (no auth required)
 router.get(
   '/track/:trackingNumber',
-  (req: Request, res: Response) => orderController.trackOrder(req, res)
+  (req: Request<{ trackingNumber: string }>, res: Response) => 
+    orderController.trackOrder(req, res)
 );
 
 // All other routes require authentication
@@ -51,12 +52,17 @@ router.use(authMiddleware);
 
 router.post('/', (req: Request, res: Response) => orderController.createOrder(req, res));
 router.get('/', (req: Request, res: Response) => orderController.getUserOrders(req, res));
-router.get('/:id', (req: Request, res: Response) => orderController.getOrderById(req, res));
+router.get('/:id', (req: Request<{ id: string }>, res: Response) => orderController.getOrderById(req, res));
 router.patch(
   '/:id/status',
   validateOrderStatusUpdate,
-  (req: Request, res: Response) => orderController.updateOrderStatus(req, res)
+  (req: Request<{ id: string }>, res: Response) => 
+    orderController.updateOrderStatus(req, res)
 );
-router.post('/:id/cancel', (req: Request, res: Response) => orderController.cancelOrder(req, res));
+router.post(
+  '/:id/cancel',
+  (req: Request<{ id: string }>, res: Response) => 
+    orderController.cancelOrder(req, res)
+);
 
 export default router;

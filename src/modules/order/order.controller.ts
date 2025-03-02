@@ -225,8 +225,16 @@ export class OrderController {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const userId = req.user!.userId;
+      const userId = req.user?.userId;
       
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'User ID is required'
+        });
+        return;
+      }
+
       const order = await this.orderCrud.updateOrderStatus(id, userId, status);
       if (!order) {
         res.status(404).json({
@@ -236,16 +244,19 @@ export class OrderController {
         return;
       }
 
-      // Get user for notifications
-      const user = await this.userCrud.findById(order.userId);
-      
-      if (user) {
-        // Send status update email
-        await this.emailService.sendOrderStatusUpdate(this.userCrud.toUser(user), order);
+      // Check if order has a userId before trying to find the user
+      if (order.userId) {
+        // Get user for notifications
+        const user = await this.userCrud.findById(order.userId);
         
-        // If delivered, send delivery confirmation
-        if (status === 'DELIVERED') {
-          await this.emailService.sendDeliveryConfirmation(this.userCrud.toUser(user), order);
+        if (user) {
+          // Send status update email
+          await this.emailService.sendOrderStatusUpdate(this.userCrud.toUser(user), order);
+          
+          // If delivered, send delivery confirmation
+          if (status === 'DELIVERED') {
+            await this.emailService.sendDeliveryConfirmation(this.userCrud.toUser(user), order);
+          }
         }
       }
 
