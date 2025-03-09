@@ -1,4 +1,5 @@
 import { IOrderDocument, PackageSize } from '../modules/order/order.model';
+import { ZoneCrud } from '../modules/zone/zone.crud';
 
 interface PriceConfig {
   basePrice: number;
@@ -36,8 +37,17 @@ export const calculatePrice = async (order: IOrderDocument): Promise<number> => 
       throw new Error('Package size is required for price calculation');
     }
 
-    // Base price calculation
-    let price = priceConfig.basePrice * priceConfig.sizeMultiplier[order.packageSize];
+    const zoneCrud = new ZoneCrud();
+    
+    // Get delivery zone from order's delivery address
+    let zonePrice = 0;
+    if (typeof order.deliveryAddress === 'object') {
+      const zone = await zoneCrud.getZoneByName(order.deliveryAddress.city);
+      zonePrice = zone ? zone.deliveryPrice : priceConfig.basePrice; // fallback to base price
+    }
+
+    // Base price calculation with zone
+    let price = zonePrice * priceConfig.sizeMultiplier[order.packageSize];
 
     // Add additional fees
     if (order.isFragile) {

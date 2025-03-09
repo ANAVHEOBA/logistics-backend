@@ -109,9 +109,14 @@ export class OrderCrud {
     }
   }
 
-  async findById(id: string, userId: string): Promise<IOrder | null> {
+  async findById(id: string, userId?: string): Promise<IOrder | null> {
     try {
-      const order = await OrderSchema.findOne({ _id: id, userId })
+      const query: any = { _id: id };
+      if (userId) {
+        query.userId = userId;
+      }
+      
+      const order = await OrderSchema.findOne(query)
         .populate('pickupAddress')
         .populate('deliveryAddress')
         .exec();

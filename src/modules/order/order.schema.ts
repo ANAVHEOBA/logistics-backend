@@ -161,6 +161,13 @@ const orderSchema = new Schema({
   specialInstructions: {
     type: String,
     trim: true
+  },
+  deliveryZone: {
+    type: Schema.Types.ObjectId,
+    ref: 'Zone'
+  },
+  zonePrice: {
+    type: Number
   }
 }, {
   timestamps: true
@@ -190,7 +197,10 @@ orderSchema.pre('validate', async function(this: IOrderDocument, next) {
       this.trackingNumber = generateTrackingNumber();
     }
     this.estimatedWeight = calculateEstimatedWeight(this.packageSize as PackageSize);
+    
+    // Calculate price including zone
     this.price = await calculatePrice(this);
+    
     this.estimatedDeliveryDate = calculateEstimatedDeliveryDate(this.isExpressDelivery);
   }
   next();

@@ -69,6 +69,8 @@ export interface IOrderBase {
   
   items: IOrderItemBase[];
   specialInstructions?: string;
+  deliveryZone?: Types.ObjectId;
+  zonePrice?: number;
 }
 
 export interface IOrderDocument extends Document, IOrderBase {
