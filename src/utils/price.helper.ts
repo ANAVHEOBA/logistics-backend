@@ -1,5 +1,6 @@
-import { IOrderDocument, PackageSize } from '../modules/order/order.model';
+import { IOrderDocument, PackageSize, IManualAddress } from '../modules/order/order.model';
 import { ZoneCrud } from '../modules/zone/zone.crud';
+import { Types } from 'mongoose';
 
 interface PriceConfig {
   basePrice: number;
@@ -41,9 +42,15 @@ export const calculatePrice = async (order: IOrderDocument): Promise<number> => 
     
     // Get delivery zone from order's delivery address
     let zonePrice = 0;
-    if (typeof order.deliveryAddress === 'object') {
-      const zone = await zoneCrud.getZoneByName(order.deliveryAddress.city);
+    if (order.deliveryAddress && 
+        typeof order.deliveryAddress === 'object' && 
+        'city' in order.deliveryAddress) {
+      const address = order.deliveryAddress as IManualAddress;
+      const zone = await zoneCrud.getZoneByName(address.city);
       zonePrice = zone ? zone.deliveryPrice : priceConfig.basePrice; // fallback to base price
+    } else {
+      // If it's an ObjectId or invalid, use base price
+      zonePrice = priceConfig.basePrice;
     }
 
     // Base price calculation with zone
