@@ -11,6 +11,7 @@ import { IStore } from '../store/store.model';
 import { IOrderItemResponse } from '../orderItem/orderItem.model';
 import { Types } from 'mongoose';
 import { ConsumerCrud } from '../consumer/consumer.crud';
+import { ZoneCrud } from '../zone/zone.crud';
 
 export class OrderController {
   private orderCrud: OrderCrud;
@@ -20,6 +21,7 @@ export class OrderController {
   private productCrud: ProductCrud;
   private storeCrud: StoreCrud;
   private consumerCrud: ConsumerCrud;
+  private zoneCrud: ZoneCrud;
 
   constructor() {
     this.orderCrud = new OrderCrud();
@@ -29,6 +31,7 @@ export class OrderController {
     this.productCrud = new ProductCrud();
     this.storeCrud = new StoreCrud();
     this.consumerCrud = new ConsumerCrud();
+    this.zoneCrud = new ZoneCrud();
   }
 
   // Helper method to convert IUserDocument to IUser
@@ -315,7 +318,34 @@ export class OrderController {
         return;
       }
 
-      // 2. Validate products and check stock
+      // 2. Validate zone if provided
+      let selectedZone = null;
+      let zonePrice = 0;
+      
+      if (orderData.zoneId) {
+        // Find the zone by ID
+        selectedZone = await this.zoneCrud.getZoneById(orderData.zoneId);
+        if (!selectedZone) {
+          res.status(404).json({
+            success: false,
+            message: 'Selected delivery zone not found'
+          });
+          return;
+        }
+        
+        // Set the zone price
+        zonePrice = selectedZone.deliveryPrice;
+        
+        // If using a zone, ensure the city in the delivery address matches the zone
+        if (orderData.deliveryAddress.type === 'manual' && 
+            orderData.deliveryAddress.manualAddress) {
+          // Update the city to match the zone name
+          orderData.deliveryAddress.manualAddress.city = selectedZone.name;
+          orderData.deliveryAddress.manualAddress.state = 'Edo State'; // Default state
+        }
+      }
+
+      // 3. Validate products and check stock
       for (const item of orderData.items) {
         const validationResult = await this.productCrud.validateGuestOrderQuantity(
           item.productId,
@@ -331,7 +361,7 @@ export class OrderController {
         }
       }
 
-      // 3. Handle delivery address
+      // 4. Handle delivery address
       let deliveryAddress: IDeliveryAddress;
       if (orderData.deliveryAddress.type === 'saved') {
         if (!orderData.deliveryAddress.savedAddress) {
@@ -370,17 +400,19 @@ export class OrderController {
         };
       }
 
-      // 4. Create the order
+      // 5. Create the order with zone information
       const order = await this.orderCrud.createConsumerOrder(
         consumerId,
         store._id.toString(),
         {
           ...orderData,
           deliveryAddress
-        }
+        },
+        selectedZone ? selectedZone._id.toString() : undefined,
+        zonePrice
       );
 
-      // 5. Send notifications
+      // 6. Send notifications
       const consumer = await this.consumerCrud.findById(consumerId);
       if (!consumer) {
         throw new Error('Consumer not found');
@@ -394,7 +426,7 @@ export class OrderController {
         order
       );
 
-      // 6. Send store notification
+      // 7. Send store notification
       await this.emailService.sendStoreOrderNotification(
         store.contactInfo.email,
         order,

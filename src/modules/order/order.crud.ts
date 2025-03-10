@@ -407,7 +407,9 @@ export class OrderCrud {
   async createConsumerOrder(
     consumerId: string,
     storeId: string,
-    orderData: IConsumerOrderRequest
+    orderData: IConsumerOrderRequest,
+    zoneId?: string,
+    zonePrice?: number
   ): Promise<IOrder> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -441,7 +443,13 @@ export class OrderCrud {
         variantData: item.variantData
       }));
 
-      // 4. Create the order with proper address handling
+      // Calculate product total
+      const productTotal = orderItems.reduce((sum, item) => sum + item.price, 0);
+      
+      // Add zone price to total if applicable
+      const totalPrice = zonePrice ? productTotal + zonePrice : productTotal;
+
+      // 4. Create the order with proper address handling and zone information
       const order = await OrderSchema.create([{
         userId: consumerId,
         storeId: storeId,
@@ -451,7 +459,7 @@ export class OrderCrud {
         isExpressDelivery: orderData.isExpressDelivery || false,
         specialInstructions: orderData.specialInstructions,
         status: 'PENDING',
-        price: orderItems.reduce((sum, item) => sum + item.price, 0),
+        price: totalPrice,
         packageSize: orderData.packageSize,
         isFragile: orderData.isFragile || false,
         requiresSpecialHandling: orderData.requiresSpecialHandling || false,
@@ -461,7 +469,10 @@ export class OrderCrud {
           lastName: 'placeholder',
           phone: 'placeholder'
         },
-        isConsumerOrder: true
+        isConsumerOrder: true,
+        // Add zone information if provided
+        ...(zoneId && { deliveryZone: new mongoose.Types.ObjectId(zoneId) }),
+        ...(zonePrice && { zonePrice })
       }], { session });
 
       await session.commitTransaction();

@@ -21,4 +21,8 @@ export class ZoneCrud {
     const result = await Zone.findByIdAndUpdate(id, { isActive: false });
     return !!result;
   }
+
+  async getZoneById(id: string): Promise<IZone | null> {
+    return await Zone.findOne({ _id: id, isActive: true });
+  }
 }

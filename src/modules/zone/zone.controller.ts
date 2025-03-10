@@ -43,4 +43,29 @@ export class ZoneController {
       res.status(500).json({ success: false, message: 'Failed to delete zone' });
     }
   };
+
+  getActiveZones = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const zones = await this.zoneCrud.getAllZones();
+      
+      // Format the response to include additional information
+      const formattedZones = zones.map(zone => ({
+        _id: zone._id,
+        name: zone.name,
+        deliveryPrice: zone.deliveryPrice,
+        description: zone.description || `Delivery to ${zone.name}`
+      }));
+      
+      res.status(200).json({ 
+        success: true, 
+        data: formattedZones 
+      });
+    } catch (error) {
+      console.error('Get active zones error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch active zones' 
+      });
+    }
+  };
 }

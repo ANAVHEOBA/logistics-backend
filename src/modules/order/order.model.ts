@@ -180,10 +180,11 @@ export interface IConsumerOrderRequest {
     }[];
   }[];
   deliveryAddress: IDeliveryAddress;
-  pickupAddress: IDeliveryAddress;  // Add this
-  packageSize: PackageSize;         // Add this
-  isFragile?: boolean;             // Add this
+  pickupAddress: IDeliveryAddress;
+  packageSize: PackageSize;
+  isFragile?: boolean;
   isExpressDelivery?: boolean;
-  requiresSpecialHandling?: boolean; // Add this
+  requiresSpecialHandling?: boolean;
   specialInstructions?: string;
+  zoneId?: string; // Add this field for zone selection
 }
