@@ -47,6 +47,22 @@ router.get(
     orderController.trackOrder(req, res)
 );
 
+// Add new routes for payment handling
+// Consumer payment routes
+router.get(
+  '/consumer/orders/:orderId/payment',
+  authMiddleware,
+  authenticateConsumer,
+  (req: Request, res: Response) => orderController.getPaymentInstructions(req, res)
+);
+
+router.post(
+  '/consumer/orders/:orderId/payment/receipt',
+  authMiddleware,
+  authenticateConsumer,
+  (req: Request, res: Response) => orderController.uploadPaymentReceipt(req, res)
+);
+
 // All other routes require authentication
 router.use(authMiddleware);
 

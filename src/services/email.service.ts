@@ -315,6 +315,21 @@ export class EmailService {
       throw error;
     }
   }
+
+  async sendPaymentVerificationEmail(
+    consumer: { email: string; firstName: string },
+    order: IOrder,
+    verified: boolean,
+    notes?: string
+  ): Promise<void> {
+    const subject = `Payment ${verified ? 'Verified' : 'Rejected'}`;
+    const text = `Dear ${consumer.firstName},\n\n`
+      + `Your payment for order ${order.trackingNumber} has been ${verified ? 'verified' : 'rejected'}.\n`
+      + (notes ? `Admin Notes: ${notes}\n\n` : '\n')
+      + 'Thank you for using our service.';
+
+    await this.sendEmail(consumer.email, subject, text);
+  }
 }
 
 // Export the sendEmail function separately

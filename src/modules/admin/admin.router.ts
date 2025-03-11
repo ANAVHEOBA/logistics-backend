@@ -28,4 +28,11 @@ router.get('/consumers/:consumerId', adminController.getConsumerDetails);
 router.get('/consumers/:consumerId/orders', adminController.getConsumerOrders);
 router.patch('/consumers/:consumerId/status', adminController.updateConsumerStatus);
 
+// Add payment verification routes
+router.get('/payments/pending', adminController.getPendingPayments);
+router.post('/orders/:orderId/payment/verify', adminController.verifyPayment);
+
+// Add receipt viewing endpoint
+router.get('/orders/:orderId/receipts', adminController.getOrderReceipts);
+
 export default router;

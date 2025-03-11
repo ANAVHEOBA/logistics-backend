@@ -11,6 +11,9 @@ export type OrderStatus =
   | 'CANCELLED' 
   | 'FAILED_DELIVERY';
 
+export type PaymentStatus = 'PENDING' | 'VERIFIED' | 'FAILED';
+export type PaymentMethod = 'BANK_TRANSFER' | 'CASH' | 'OTHER';
+
 export interface IOrderItemBase {
   name: string;
   quantity: number;
@@ -71,6 +74,22 @@ export interface IOrderBase {
   specialInstructions?: string;
   deliveryZone?: Types.ObjectId;
   zonePrice?: number;
+  
+  // New payment fields
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  paymentReference: string;
+  paymentReceipts: Array<{
+    url: string;
+    uploadedAt: Date;
+  }>;
+  paymentNotes?: string;
+  paymentDate?: Date;
+  bankAccountDetails?: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+  };
 }
 
 export interface IOrderDocument extends Document, IOrderBase {
@@ -101,6 +120,22 @@ export interface IOrder {
   statusNotes?: string;
   createdAt: Date;
   updatedAt: Date;
+  
+  // New payment fields
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  paymentReference: string;
+  paymentReceipts: Array<{
+    url: string;
+    uploadedAt: Date;
+  }>;
+  paymentNotes?: string;
+  paymentDate?: Date;
+  bankAccountDetails?: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+  };
 }
 
 export interface ICreateOrderRequest {
@@ -186,5 +221,6 @@ export interface IConsumerOrderRequest {
   isExpressDelivery?: boolean;
   requiresSpecialHandling?: boolean;
   specialInstructions?: string;
-  zoneId?: string; // Add this field for zone selection
+  zoneId?: string;
+  paymentMethod: PaymentMethod;
 }

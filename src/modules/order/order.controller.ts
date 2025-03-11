@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { OrderCrud } from './order.crud';
-import { ICreateOrderRequest, OrderStatus, IManualAddress, IDeliveryAddress, IConsumerOrderRequest } from './order.model';
+import { ICreateOrderRequest, OrderStatus, IManualAddress, IDeliveryAddress, IConsumerOrderRequest, PaymentStatus, PaymentMethod } from './order.model';
 import { AddressCrud } from '../address/address.crud';
 import { EmailService } from '../../services/email.service';
 import { UserCrud } from '../user/user.crud';
@@ -12,6 +12,8 @@ import { IOrderItemResponse } from '../orderItem/orderItem.model';
 import { Types } from 'mongoose';
 import { ConsumerCrud } from '../consumer/consumer.crud';
 import { ZoneCrud } from '../zone/zone.crud';
+import { config } from '../../config/environment';
+import { generatePaymentReference } from '../../utils/payment.helper';
 
 export class OrderController {
   private orderCrud: OrderCrud;
@@ -400,7 +402,13 @@ export class OrderController {
         };
       }
 
-      // 5. Create the order with zone information
+      // Generate payment reference
+      const paymentReference = generatePaymentReference();
+      
+      // Get bank account details from config
+      const bankAccountDetails = config.bankAccounts.default;
+      
+      // Create the order with payment information
       const order = await this.orderCrud.createConsumerOrder(
         consumerId,
         store._id.toString(),
@@ -409,10 +417,16 @@ export class OrderController {
           deliveryAddress
         },
         selectedZone ? selectedZone._id.toString() : undefined,
-        zonePrice
+        zonePrice,
+        {
+          paymentStatus: 'PENDING',
+          paymentMethod: orderData.paymentMethod || 'BANK_TRANSFER',
+          paymentReference,
+          bankAccountDetails
+        }
       );
 
-      // 6. Send notifications
+      // Send notifications
       const consumer = await this.consumerCrud.findById(consumerId);
       if (!consumer) {
         throw new Error('Consumer not found');
@@ -426,7 +440,7 @@ export class OrderController {
         order
       );
 
-      // 7. Send store notification
+      // Send store notification
       await this.emailService.sendStoreOrderNotification(
         store.contactInfo.email,
         order,
@@ -435,9 +449,16 @@ export class OrderController {
 
       res.status(201).json({
         success: true,
-        data: order
+        data: {
+          ...order,
+          paymentInstructions: {
+            reference: paymentReference,
+            bankDetails: bankAccountDetails,
+            amount: order.price,
+            instructions: "Please transfer the exact amount and use your payment reference as the transaction description."
+          }
+        }
       });
-
     } catch (error) {
       console.error('Place consumer order error:', error);
       res.status(500).json({
@@ -515,6 +536,85 @@ export class OrderController {
       res.status(500).json({
         success: false,
         message: 'Failed to cancel order'
+      });
+    }
+  }
+
+  public async uploadPaymentReceipt(req: Request, res: Response): Promise<void> {
+    try {
+      const consumerId = req.consumer!.consumerId;
+      const { orderId } = req.params;
+      const { receiptUrl } = req.body;
+
+      if (!receiptUrl) {
+        res.status(400).json({
+          success: false,
+          message: 'Receipt URL is required'
+        });
+        return;
+      }
+
+      const order = await this.orderCrud.updatePaymentReceipt(orderId, consumerId, receiptUrl);
+      
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: 'Order not found or you do not have permission'
+        });
+        return;
+      }
+
+      // Notify admin about new payment receipt
+      // This could be an email or a notification in the admin dashboard
+      
+      res.status(200).json({
+        success: true,
+        data: {
+          message: 'Payment receipt uploaded successfully',
+          paymentStatus: order.paymentStatus
+        }
+      });
+    } catch (error) {
+      console.error('Upload payment receipt error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload payment receipt'
+      });
+    }
+  }
+
+  public async getPaymentInstructions(req: Request, res: Response): Promise<void> {
+    try {
+      const consumerId = req.consumer!.consumerId;
+      const { orderId } = req.params;
+
+      const order = await this.orderCrud.findConsumerOrderById(orderId, consumerId);
+      
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          orderId: order._id,
+          trackingNumber: order.trackingNumber,
+          amount: order.price,
+          paymentReference: order.paymentReference,
+          paymentStatus: order.paymentStatus,
+          bankAccountDetails: order.bankAccountDetails,
+          instructions: "Please transfer the exact amount and use your payment reference as the transaction description."
+        }
+      });
+    } catch (error) {
+      console.error('Get payment instructions error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get payment instructions'
       });
     }
   }

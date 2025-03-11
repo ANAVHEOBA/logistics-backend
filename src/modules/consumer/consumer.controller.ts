@@ -9,12 +9,15 @@ import { config } from '../../config/environment';
 import { Rating } from '../rating/rating.schema';
 import { Store } from '../store/store.model';
 import { ConsumerSchema } from './consumer.schema';
+import { OrderCrud } from '../order/order.crud';
 
 export class ConsumerController {
   private consumerCrud: ConsumerCrud;
+  private orderCrud: OrderCrud;
 
   constructor() {
     this.consumerCrud = new ConsumerCrud();
+    this.orderCrud = new OrderCrud();
   }
 
   register = async (
@@ -539,6 +542,41 @@ export class ConsumerController {
       res.status(500).json({
         success: false,
         message: 'Failed to update preferred categories'
+      });
+    }
+  };
+
+  getPaymentNotifications = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const consumerId = req.consumer?.consumerId;
+      if (!consumerId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+      
+      // Get orders with recent payment status changes
+      const orders = await this.orderCrud.getConsumerPaymentUpdates(consumerId);
+      
+      res.status(200).json({
+        success: true,
+        data: orders.map(order => ({
+          orderId: order._id,
+          trackingNumber: order.trackingNumber,
+          paymentStatus: order.paymentStatus,
+          paymentNotes: order.paymentNotes,
+          paymentDate: order.paymentDate,
+          amount: order.price,
+          updatedAt: order.updatedAt
+        }))
+      });
+    } catch (error) {
+      console.error('Get payment notifications error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get payment notifications'
       });
     }
   };

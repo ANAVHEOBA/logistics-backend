@@ -24,5 +24,13 @@ export const config = {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD
     }
+  },
+  // Add bank account details
+  bankAccounts: {
+    default: {
+      accountName: process.env.BANK_ACCOUNT_NAME || 'Logistics Company Ltd',
+      accountNumber: process.env.BANK_ACCOUNT_NUMBER || '0123456789',
+      bankName: process.env.BANK_NAME || 'First Bank'
+    }
   }
 };

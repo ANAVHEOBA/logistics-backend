@@ -1,5 +1,6 @@
 import { Product, IProduct, ProductStatus } from './product.model';
 import { FilterQuery } from 'mongoose';
+import mongoose from 'mongoose';
 
 export class ProductCrud {
   async createProduct(productData: Partial<IProduct>): Promise<IProduct> {
@@ -171,7 +172,7 @@ export class ProductCrud {
   async reserveProductStock(
     productId: string,
     quantity: number,
-    expiryMinutes: number = 15
+    session?: mongoose.ClientSession
   ): Promise<boolean> {
     const product = await Product.findOneAndUpdate(
       {
@@ -183,11 +184,11 @@ export class ProductCrud {
         $push: {
           reservations: {
             quantity,
-            expiresAt: new Date(Date.now() + expiryMinutes * 60000)
+            expiresAt: new Date(Date.now() + 15 * 60000)
           }
         }
       },
-      { new: true }
+      { new: true, session }
     );
 
     return !!product;

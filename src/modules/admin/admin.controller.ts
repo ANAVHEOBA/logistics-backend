@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../../config/environment';
 import mongoose from 'mongoose';
 import { OrderCrud } from '../order/order.crud';
-import { OrderStatus } from '../order/order.model';
+import { OrderStatus, PaymentStatus } from '../order/order.model';
 import { EmailService } from '../../services/email.service';
 import { ConsumerCrud } from '../consumer/consumer.crud';
 
@@ -539,6 +539,112 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to get consumer statistics'
+      });
+    }
+  };
+
+  verifyPayment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const adminId = req.admin!.adminId;
+      const { orderId } = req.params;
+      const { verified, notes } = req.body;
+      
+      if (verified === undefined) {
+        res.status(400).json({
+          success: false,
+          message: 'Verification status is required'
+        });
+        return;
+      }
+      
+      const paymentStatus: PaymentStatus = verified ? 'VERIFIED' : 'FAILED';
+      
+      const order = await this.orderCrud.updatePaymentStatus(
+        orderId, 
+        paymentStatus, 
+        notes,
+        adminId
+      );
+      
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+        return;
+      }
+      
+      // If payment is verified, update order status to CONFIRMED
+      await this.orderCrud.updateOrderStatus(
+        orderId,
+        'CONFIRMED',
+        `Payment verified by admin: ${adminId}`
+      );
+      
+      // Send notification to consumer
+      try {
+        if (order.userId) {
+          const consumer = await this.consumerCrud.findById(order.userId);
+          if (consumer) {
+            await this.emailService.sendPaymentVerificationEmail(
+              {
+                email: consumer.email,
+                firstName: consumer.firstName
+              },
+              order,
+              verified,
+              notes
+            );
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send payment verification email:', emailError);
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: {
+          message: `Payment ${verified ? 'verified' : 'rejected'} successfully`,
+          order
+        }
+      });
+    } catch (error) {
+      console.error('Verify payment error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to verify payment'
+      });
+    }
+  };
+
+  getPendingPayments = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const { orders, total } = await this.orderCrud.findOrdersByPaymentStatus(
+        'PENDING',
+        page,
+        limit
+      );
+      
+      res.status(200).json({
+        success: true,
+        data: {
+          orders,
+          pagination: {
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get pending payments error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get pending payments'
       });
     }
   };

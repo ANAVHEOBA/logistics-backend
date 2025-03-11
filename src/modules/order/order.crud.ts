@@ -510,8 +510,6 @@ export class OrderCrud {
     } as IOrder;
   }
 
-
-
   public async findConsumerOrders(consumerId: string): Promise<any[]> {
     return this.model.find({ consumerId });
   }
@@ -524,6 +522,69 @@ export class OrderCrud {
     return this.model.findOneAndUpdate(
       { _id: orderId, consumerId },
       { status: 'CANCELLED' },
+      { new: true }
+    );
+  }
+
+  async updatePaymentReceipt(
+    orderId: string,
+    consumerId: string,
+    receiptUrl: string
+  ): Promise<IOrder | null> {
+    return this.model.findOneAndUpdate(
+      { _id: orderId, userId: consumerId },
+      { 
+        $push: { 
+          paymentReceipts: {
+            url: receiptUrl,
+            uploadedAt: new Date()
+          }
+        },
+        paymentStatus: 'PENDING' 
+      },
+      { new: true }
+    );
+  }
+
+  async findOrdersByPaymentStatus(
+    status: PaymentStatus,
+    page: number,
+    limit: number
+  ): Promise<{ orders: IOrder[]; total: number }> {
+    const skip = (page - 1) * limit;
+    const query = { paymentStatus: status };
+
+    const [orders, total] = await Promise.all([
+      this.model.find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.model.countDocuments(query)
+    ]);
+
+    return { orders, total };
+  }
+
+  async updatePaymentStatus(
+    orderId: string,
+    status: PaymentStatus,
+    notes?: string,
+    adminId?: string
+  ): Promise<IOrder | null> {
+    const update: any = {
+      paymentStatus: status,
+      paymentNotes: notes
+    };
+
+    if (status === 'VERIFIED') {
+      update.paymentDate = new Date();
+      update.verifiedBy = adminId;
+    }
+
+    return this.model.findByIdAndUpdate(
+      orderId,
+      update,
       { new: true }
     );
   }
