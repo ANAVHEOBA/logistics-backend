@@ -146,7 +146,11 @@ export class UserCrud {
           createdAt: order.createdAt,
           updatedAt: order.updatedAt,
           deliveryDate: order.deliveryDate,
-          statusNotes: order.statusNotes || ''
+          statusNotes: order.statusNotes || '',
+          paymentStatus: order.paymentStatus || 'PENDING',
+          paymentMethod: order.paymentMethod || 'BANK_TRANSFER',
+          paymentReference: order.paymentReference || '',
+          paymentReceipts: order.paymentReceipts || []
         };
       });
     } catch (error) {

@@ -323,12 +323,15 @@ export class EmailService {
     notes?: string
   ): Promise<void> {
     const subject = `Payment ${verified ? 'Verified' : 'Rejected'}`;
-    const text = `Dear ${consumer.firstName},\n\n`
-      + `Your payment for order ${order.trackingNumber} has been ${verified ? 'verified' : 'rejected'}.\n`
-      + (notes ? `Admin Notes: ${notes}\n\n` : '\n')
-      + 'Thank you for using our service.';
+    const html = `
+      <h2>Payment ${verified ? 'Verified' : 'Rejected'}</h2>
+      <p>Dear ${consumer.firstName},</p>
+      <p>Your payment for order ${order.trackingNumber} has been ${verified ? 'verified' : 'rejected'}.</p>
+      ${notes ? `<p><strong>Admin Notes:</strong> ${notes}</p>` : ''}
+      <p>Thank you for using our service.</p>
+    `;
 
-    await this.sendEmail(consumer.email, subject, text);
+    await EmailService.sendEmail(consumer.email, subject, html);
   }
 }
 

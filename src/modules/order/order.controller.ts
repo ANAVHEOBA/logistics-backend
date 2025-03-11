@@ -414,16 +414,14 @@ export class OrderController {
         store._id.toString(),
         {
           ...orderData,
-          deliveryAddress
-        },
-        selectedZone ? selectedZone._id.toString() : undefined,
-        zonePrice,
-        {
-          paymentStatus: 'PENDING',
+          deliveryAddress,
+          paymentStatus: 'PENDING' as PaymentStatus,
           paymentMethod: orderData.paymentMethod || 'BANK_TRANSFER',
           paymentReference,
           bankAccountDetails
-        }
+        },
+        selectedZone ? selectedZone._id.toString() : undefined,
+        zonePrice
       );
 
       // Send notifications

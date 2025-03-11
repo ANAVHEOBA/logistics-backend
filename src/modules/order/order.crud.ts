@@ -6,7 +6,8 @@ import {
   ICreateGuestOrderRequest,
   OrderStatus,
   IOrderItemBase,
-  IConsumerOrderRequest
+  IConsumerOrderRequest,
+  PaymentStatus
 } from './order.model';
 import { OrderItem } from '../orderItem/orderItem.schema';
 import mongoose, { Model } from 'mongoose';
@@ -587,5 +588,21 @@ export class OrderCrud {
       update,
       { new: true }
     );
+  }
+
+  async getConsumerPaymentUpdates(consumerId: string): Promise<IOrder[]> {
+    try {
+      const orders = await this.model.find({ 
+        consumerId,
+        paymentStatus: { $in: ['PENDING', 'VERIFIED', 'FAILED'] }
+      })
+      .sort({ updatedAt: -1 })
+      .limit(10)
+      .exec();
+
+      return orders.map(order => this.toOrderResponse(order));
+    } catch (error) {
+      throw error;
+    }
   }
 }

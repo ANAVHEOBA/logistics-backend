@@ -223,4 +223,11 @@ export interface IConsumerOrderRequest {
   specialInstructions?: string;
   zoneId?: string;
   paymentMethod: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  paymentReference?: string;
+  bankAccountDetails?: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+  };
 }

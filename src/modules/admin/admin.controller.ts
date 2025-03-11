@@ -558,11 +558,12 @@ export class AdminController {
       }
       
       const paymentStatus: PaymentStatus = verified ? 'VERIFIED' : 'FAILED';
+      const statusNote = `Payment ${verified ? 'verified' : 'rejected'} by admin: ${adminId}`;
       
       const order = await this.orderCrud.updatePaymentStatus(
         orderId, 
         paymentStatus, 
-        notes,
+        notes || statusNote,
         adminId
       );
       
@@ -575,11 +576,13 @@ export class AdminController {
       }
       
       // If payment is verified, update order status to CONFIRMED
-      await this.orderCrud.updateOrderStatus(
-        orderId,
-        'CONFIRMED',
-        `Payment verified by admin: ${adminId}`
-      );
+      if (verified) {
+        await this.orderCrud.adminUpdateOrderStatus(
+          orderId,
+          'CONFIRMED' as OrderStatus,
+          notes || statusNote
+        );
+      }
       
       // Send notification to consumer
       try {
@@ -645,6 +648,47 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to get pending payments'
+      });
+    }
+  };
+
+  getOrderReceipts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { orderId } = req.params;
+
+      // Validate orderId
+      if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid order ID'
+        });
+        return;
+      }
+
+      const order = await this.orderCrud.findById(orderId);
+      
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+        return;
+      }
+
+      // Return payment receipts from the order
+      res.status(200).json({
+        success: true,
+        data: {
+          orderId: order._id,
+          trackingNumber: order.trackingNumber,
+          paymentReceipts: order.paymentReceipts || []
+        }
+      });
+    } catch (error) {
+      console.error('Get order receipts error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get order receipts'
       });
     }
   };
