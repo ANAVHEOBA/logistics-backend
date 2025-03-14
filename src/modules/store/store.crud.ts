@@ -161,4 +161,84 @@ export class StoreCrud {
       throw error;
     }
   }
+
+  // Add a new method for admin store listing
+  async listAdminStores({
+    filter = {},
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    search,
+    category,
+    status,
+    minRevenue,
+    maxRevenue
+  }: {
+    filter?: Record<string, any>;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    search?: string;
+    category?: StoreCategory;
+    status?: StoreStatus;
+    minRevenue?: number;
+    maxRevenue?: number;
+  }) {
+    const skip = (page - 1) * limit;
+    const sort: Record<string, 1 | -1> = {};
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    // Combine with existing filter
+    const finalFilter: Record<string, any> = { ...filter };
+
+    // Add search filter
+    if (search) {
+      finalFilter.$or = [
+        { storeName: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Add category filter
+    if (category) {
+      finalFilter.category = category;
+    }
+
+    // Add status filter
+    if (status) {
+      finalFilter.status = status;
+    }
+
+    // Add revenue filters
+    if (minRevenue !== undefined) {
+      finalFilter['metrics.totalRevenue'] = { $gte: minRevenue };
+    }
+    if (maxRevenue !== undefined) {
+      finalFilter['metrics.totalRevenue'] = {
+        ...(finalFilter['metrics.totalRevenue'] || {}),
+        $lte: maxRevenue
+      };
+    }
+
+    const stores = await Store
+      .find(finalFilter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .populate('userId', 'firstName lastName email'); // Optionally populate user details
+
+    const total = await Store.countDocuments(finalFilter);
+
+    return {
+      stores,
+      pagination: {
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        hasMore: page * limit < total
+      }
+    };
+  }
 } 

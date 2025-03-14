@@ -9,6 +9,8 @@ import { OrderCrud } from '../order/order.crud';
 import { OrderStatus, PaymentStatus } from '../order/order.model';
 import { EmailService } from '../../services/email.service';
 import { ConsumerCrud } from '../consumer/consumer.crud';
+import { StoreCrud } from '../store/store.crud';
+import { StoreStatus, StoreCategory } from '../store/store.model';
 
 // Define the valid order statuses
 const ORDER_STATUSES = [
@@ -27,6 +29,7 @@ export class AdminController {
   private orderCrud: OrderCrud;
   private emailService: EmailService;
   private consumerCrud: ConsumerCrud;
+  private storeCrud: StoreCrud;
 
   constructor() {
     this.adminCrud = new AdminCrud();
@@ -34,6 +37,7 @@ export class AdminController {
     this.orderCrud = new OrderCrud();
     this.emailService = new EmailService();
     this.consumerCrud = new ConsumerCrud();
+    this.storeCrud = new StoreCrud();
   }
 
   createFirstAdmin = async (req: Request, res: Response): Promise<void> => {
@@ -689,6 +693,45 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to get order receipts'
+      });
+    }
+  };
+
+  getAllStores = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { 
+        page = 1, 
+        limit = 10, 
+        search,
+        category,
+        status,
+        minRevenue,
+        maxRevenue,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = req.query;
+
+      const stores = await this.storeCrud.listAdminStores({
+        page: Number(page),
+        limit: Number(limit),
+        search: search as string,
+        category: category as StoreCategory,
+        status: status as StoreStatus,
+        minRevenue: minRevenue ? Number(minRevenue) : undefined,
+        maxRevenue: maxRevenue ? Number(maxRevenue) : undefined,
+        sortBy: sortBy as string,
+        sortOrder: sortOrder as 'asc' | 'desc'
+      });
+
+      res.status(200).json({
+        success: true,
+        data: stores
+      });
+    } catch (error) {
+      console.error('Get all stores error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve stores'
       });
     }
   };

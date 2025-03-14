@@ -35,4 +35,7 @@ router.post('/orders/:orderId/payment/verify', adminController.verifyPayment);
 // Add receipt viewing endpoint
 router.get('/orders/:orderId/receipts', adminController.getOrderReceipts);
 
+// Add stores endpoint
+router.get('/stores', adminController.getAllStores);
+
 export default router;
