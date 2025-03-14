@@ -1,4 +1,4 @@
-import { Store, IStore, StoreStatus } from './store.model';
+import { Store, IStore, StoreStatus, StoreCategory } from './store.model';
 import mongoose from 'mongoose';
 
 interface ListStoresParams {
