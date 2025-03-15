@@ -41,8 +41,63 @@ export interface StoreMetrics {
   totalRevenue: number;
 }
 
+export interface StoreOrderStats {
+  total: number;
+  pending: number;
+  completed: number;
+  cancelled: number;
+  revenue: {
+    total: number;
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+  };
+}
+
+export interface ProductPerformance {
+  productId: string;
+  name: string;
+  totalOrders: number;
+  totalQuantity: number;
+  totalRevenue: number;
+  averageRating?: number;
+}
+
 export interface StoreDashboardData {
   store: any;
   metrics: StoreMetrics;
   setupCompletion: number;
+  stats: StoreOrderStats;
+  recentOrders: any[];
+  topProducts: ProductPerformance[];
+  revenueBreakdown: {
+    daily: { date: string; amount: number }[];
+    monthly: { month: string; amount: number }[];
+  };
+}
+
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+  status?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface StoreOrder {
+  _id: string;
+  orderId: string;
+  trackingNumber: string;
+  status: string;
+  paymentStatus: string;
+  createdAt: Date;
+  items: any[];
+  pickupAddress: any;
+  deliveryAddress: any;
+  specialInstructions?: string;
 } 

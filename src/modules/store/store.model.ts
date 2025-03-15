@@ -226,8 +226,6 @@ storeSchema.pre('save', async function(next) {
 });
 
 // Add indexes
-storeSchema.index({ storeName: 1 });
-storeSchema.index({ userId: 1 });
 storeSchema.index({ category: 1 });
 storeSchema.index({ status: 1 });
 

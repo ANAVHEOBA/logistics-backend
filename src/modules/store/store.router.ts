@@ -16,6 +16,16 @@ router.delete('/', authMiddleware, storeController.deleteStore);
 router.get('/metrics', authMiddleware, storeController.getStoreMetrics);
 router.put('/settings', authMiddleware, storeController.updateStoreSettings);
 router.post('/activate', authMiddleware, storeController.activateStore);
+router.post('/address', authMiddleware, storeController.addStoreAddress);
+router.put('/address', authMiddleware, storeController.updateStoreAddress);
+router.get('/orders', authMiddleware, storeController.getStoreOrders);
+router.get('/revenue', authMiddleware, storeController.getStoreRevenue);
+router.get('/products/performance', authMiddleware, storeController.getProductPerformance);
+router.get('/dashboard', authMiddleware, storeController.getStoreDashboard);
+
+// Store order management routes
+router.get('/orders/:orderId', authMiddleware, storeController.getStoreOrderDetails);
+router.post('/orders/:orderId/ready', authMiddleware, storeController.markOrderReady);
 
 // Public routes (no auth required) - Move these AFTER the specific routes
 router.get('/:slug', storeController.getPublicStore);

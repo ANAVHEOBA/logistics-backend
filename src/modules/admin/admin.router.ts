@@ -20,6 +20,7 @@ router.get('/users/:userId', adminController.getUserById);
 router.get('/orders', adminController.getAllOrders);
 router.get('/orders/stats', adminController.getOrderStats);
 router.patch('/orders/:orderId/status', adminController.updateOrderStatus);
+router.get('/orders/ready-for-pickup', adminController.getReadyForPickupOrders);
 
 // Consumer Management routes
 router.get('/consumers/stats', adminController.getConsumerStats);

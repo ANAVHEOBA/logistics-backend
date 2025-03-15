@@ -10,14 +10,17 @@ import { Rating } from '../rating/rating.schema';
 import { Store } from '../store/store.model';
 import { ConsumerSchema } from './consumer.schema';
 import { OrderCrud } from '../order/order.crud';
+import { StoreCrud } from '../store/store.crud';
 
 export class ConsumerController {
   private consumerCrud: ConsumerCrud;
   private orderCrud: OrderCrud;
+  private storeCrud: StoreCrud;
 
   constructor() {
     this.consumerCrud = new ConsumerCrud();
     this.orderCrud = new OrderCrud();
+    this.storeCrud = new StoreCrud();
   }
 
   register = async (
@@ -577,6 +580,36 @@ export class ConsumerController {
       res.status(500).json({
         success: false,
         message: 'Failed to get payment notifications'
+      });
+    }
+  };
+
+  getStorePickupAddress = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+
+      const store = await this.storeCrud.findById(storeId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          pickupAddress: store.address,
+          storeName: store.storeName,
+          contactInfo: store.contactInfo
+        }
+      });
+    } catch (error) {
+      console.error('Get store pickup address error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store pickup address'
       });
     }
   };

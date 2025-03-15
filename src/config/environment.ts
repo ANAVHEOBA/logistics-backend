@@ -28,9 +28,9 @@ export const config = {
   // Add bank account details
   bankAccounts: {
     default: {
-      accountName: process.env.BANK_ACCOUNT_NAME || 'Logistics Company Ltd',
+      accountName: process.env.BANK_ACCOUNT_NAME || 'Default Account',
       accountNumber: process.env.BANK_ACCOUNT_NUMBER || '0123456789',
-      bankName: process.env.BANK_NAME || 'First Bank'
+      bankName: process.env.BANK_NAME || 'Default Bank'
     }
   }
 };

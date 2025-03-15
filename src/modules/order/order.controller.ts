@@ -310,7 +310,7 @@ export class OrderController {
       const consumerId = req.consumer!.consumerId;
       const orderData = req.body as IConsumerOrderRequest;
 
-      // 1. Validate store exists
+      // 1. Validate store exists and get store address
       const store = await this.storeCrud.findById(orderData.storeId);
       if (!store) {
         res.status(404).json({
@@ -320,140 +320,80 @@ export class OrderController {
         return;
       }
 
-      // 2. Validate zone if provided
+      // 2. Set pickup address as store's default address
+      const pickupAddress: IManualAddress = {
+        street: store.address.street,
+        city: store.address.city,
+        state: store.address.state,
+        country: store.address.country,
+        postalCode: store.address.postalCode,
+        recipientName: store.storeName,
+        recipientPhone: store.contactInfo.phone,
+        recipientEmail: store.contactInfo.email
+      };
+
+      // 3. Validate zone and calculate delivery price
       let selectedZone = null;
       let zonePrice = 0;
       
-      if (orderData.zoneId) {
-        // Find the zone by ID
-        selectedZone = await this.zoneCrud.getZoneById(orderData.zoneId);
-        if (!selectedZone) {
-          res.status(404).json({
-            success: false,
-            message: 'Selected delivery zone not found'
-          });
-          return;
-        }
-        
-        // Set the zone price
-        zonePrice = selectedZone.deliveryPrice;
-        
-        // If using a zone, ensure the city in the delivery address matches the zone
-        if (orderData.deliveryAddress.type === 'manual' && 
-            orderData.deliveryAddress.manualAddress) {
-          // Update the city to match the zone name
-          orderData.deliveryAddress.manualAddress.city = selectedZone.name;
-          orderData.deliveryAddress.manualAddress.state = 'Edo State'; // Default state
-        }
+      if (!orderData.zoneId) {
+        res.status(400).json({
+          success: false,
+          message: 'Delivery zone is required'
+        });
+        return;
       }
 
-      // 3. Validate products and check stock
-      for (const item of orderData.items) {
-        const validationResult = await this.productCrud.validateGuestOrderQuantity(
-          item.productId,
-          item.quantity
-        );
-
-        if (!validationResult.valid) {
-          res.status(400).json({
-            success: false,
-            message: `Product validation failed: ${validationResult.message}`
-          });
-          return;
-        }
+      selectedZone = await this.zoneCrud.getZoneById(orderData.zoneId);
+      if (!selectedZone) {
+        res.status(404).json({
+          success: false,
+          message: 'Selected delivery zone not found'
+        });
+        return;
       }
 
-      // 4. Handle delivery address
-      let deliveryAddress: IDeliveryAddress;
-      if (orderData.deliveryAddress.type === 'saved') {
-        if (!orderData.deliveryAddress.savedAddress) {
-          res.status(400).json({
-            success: false,
-            message: 'Saved address ID is required'
-          });
-          return;
-        }
-        const savedAddress = await this.addressCrud.findById(
-          orderData.deliveryAddress.savedAddress,
-          consumerId
-        );
-        if (!savedAddress) {
-          res.status(400).json({
-            success: false,
-            message: 'Invalid delivery address'
-          });
-          return;
-        }
-        deliveryAddress = {
-          type: 'saved',
-          savedAddress: savedAddress._id.toString()
-        };
-      } else {
-        if (!orderData.deliveryAddress.manualAddress) {
-          res.status(400).json({
-            success: false,
-            message: 'Manual address details are required'
-          });
-          return;
-        }
-        deliveryAddress = {
-          type: 'manual',
-          manualAddress: orderData.deliveryAddress.manualAddress
-        };
-      }
+      // Set the zone price in Naira
+      zonePrice = selectedZone.deliveryPrice;
 
-      // Generate payment reference
-      const paymentReference = generatePaymentReference();
-      
-      // Get bank account details from config
-      const bankAccountDetails = config.bankAccounts.default;
-      
-      // Create the order with payment information
+      // 4. Calculate total price in Naira
+      const productTotal = await this.calculateProductTotal(orderData.items);
+      const totalPrice = productTotal + zonePrice;
+
+      // Create the order with all the necessary information
       const order = await this.orderCrud.createConsumerOrder(
         consumerId,
-        store._id.toString(),
+        orderData.storeId,
         {
           ...orderData,
-          deliveryAddress,
-          paymentStatus: 'PENDING' as PaymentStatus,
+          pickupAddress: {
+            type: 'manual',
+            manualAddress: pickupAddress
+          },
+          totalPrice,
           paymentMethod: orderData.paymentMethod || 'BANK_TRANSFER',
-          paymentReference,
-          bankAccountDetails
+          paymentReference: generatePaymentReference(),
+          bankAccountDetails: config.bankAccounts.default
         },
-        selectedZone ? selectedZone._id.toString() : undefined,
+        selectedZone._id.toString(),
         zonePrice
       );
 
       // Send notifications
-      const consumer = await this.consumerCrud.findById(consumerId);
-      if (!consumer) {
-        throw new Error('Consumer not found');
-      }
-
-      await this.emailService.sendConsumerOrderConfirmation(
-        {
-          email: consumer.email,
-          name: `${consumer.firstName} ${consumer.lastName}`
-        },
-        order
-      );
-
-      // Send store notification
-      await this.emailService.sendStoreOrderNotification(
-        store.contactInfo.email,
-        order,
-        order.items
-      );
+      await this.sendOrderNotifications(order, store, consumerId);
 
       res.status(201).json({
         success: true,
         data: {
           ...order,
           paymentInstructions: {
-            reference: paymentReference,
-            bankDetails: bankAccountDetails,
-            amount: order.price,
-            instructions: "Please transfer the exact amount and use your payment reference as the transaction description."
+            reference: order.paymentReference,
+            bankDetails: config.bankAccounts.default,
+            amount: totalPrice,
+            deliveryFee: zonePrice,
+            subtotal: productTotal,
+            currency: 'NGN',
+            instructions: "Please transfer the exact amount in Naira and use your payment reference as the transaction description."
           }
         }
       });
@@ -464,6 +404,40 @@ export class OrderController {
         message: 'Failed to place order'
       });
     }
+  }
+
+  private async calculateProductTotal(items: IConsumerOrderRequest['items']): Promise<number> {
+    let total = 0;
+    for (const item of items) {
+      const product = await this.productCrud.getProductById(item.productId);
+      if (!product) {
+        throw new Error(`Product not found: ${item.productId}`);
+      }
+      total += product.price * item.quantity;
+    }
+    return total;
+  }
+
+  private async sendOrderNotifications(order: any, store: IStore, consumerId: string): Promise<void> {
+    const consumer = await this.consumerCrud.findById(consumerId);
+    if (!consumer) {
+      throw new Error('Consumer not found');
+    }
+
+    await Promise.all([
+      this.emailService.sendConsumerOrderConfirmation(
+        {
+          email: consumer.email,
+          name: `${consumer.firstName} ${consumer.lastName}`
+        },
+        order
+      ),
+      this.emailService.sendStoreOrderNotification(
+        store.contactInfo.email,
+        order,
+        order.items
+      )
+    ]);
   }
 
   public async getConsumerOrders(req: Request, res: Response): Promise<void> {

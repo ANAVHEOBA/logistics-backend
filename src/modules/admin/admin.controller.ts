@@ -16,6 +16,7 @@ import { StoreStatus, StoreCategory } from '../store/store.model';
 const ORDER_STATUSES = [
   'PENDING',
   'CONFIRMED',
+  'READY_FOR_PICKUP',
   'PICKED_UP',
   'IN_TRANSIT',
   'DELIVERED',
@@ -732,6 +733,38 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve stores'
+      });
+    }
+  };
+
+  getReadyForPickupOrders = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const { orders, total } = await this.orderCrud.findOrdersByStatus(
+        'READY_FOR_PICKUP',
+        page,
+        limit
+      );
+      
+      res.status(200).json({
+        success: true,
+        data: {
+          orders,
+          pagination: {
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get ready for pickup orders error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get ready for pickup orders'
       });
     }
   };

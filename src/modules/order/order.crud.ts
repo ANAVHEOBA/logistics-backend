@@ -12,6 +12,7 @@ import {
 import { OrderItem } from '../orderItem/orderItem.schema';
 import mongoose, { Model } from 'mongoose';
 import { ProductCrud } from '../product/product.crud';
+import { randomBytes } from 'crypto';
 
 interface OrderFilters {
   status?: OrderStatus;
@@ -42,6 +43,15 @@ export class OrderCrud {
   constructor() {
     this.productCrud = new ProductCrud();
     this.model = OrderSchema; // Assign the Mongoose model to the model property
+  }
+
+  // Add this private method to generate payment reference
+  private generatePaymentReference(): string {
+    // Generate a random string of 8 characters
+    const randomString = randomBytes(4).toString('hex').toUpperCase();
+    // Add timestamp to ensure uniqueness
+    const timestamp = Date.now().toString(36).toUpperCase();
+    return `PAY-${timestamp}-${randomString}`;
   }
 
   async createOrder(userId: string, orderData: ICreateOrderRequest): Promise<IOrder> {
@@ -450,35 +460,30 @@ export class OrderCrud {
       // Add zone price to total if applicable
       const totalPrice = zonePrice ? productTotal + zonePrice : productTotal;
 
-      // 4. Create the order with proper address handling and zone information
+      // 4. Create the order with pickupAddress
       const order = await OrderSchema.create([{
         userId: consumerId,
         storeId: storeId,
         items: orderItems,
-        pickupAddress: orderData.pickupAddress.manualAddress,
+        pickupAddress: orderData.pickupAddress,
         deliveryAddress: orderData.deliveryAddress.manualAddress,
+        packageSize: orderData.packageSize,
+        isFragile: orderData.isFragile || false,
         isExpressDelivery: orderData.isExpressDelivery || false,
+        requiresSpecialHandling: orderData.requiresSpecialHandling || false,
         specialInstructions: orderData.specialInstructions,
         status: 'PENDING',
         price: totalPrice,
-        packageSize: orderData.packageSize,
-        isFragile: orderData.isFragile || false,
-        requiresSpecialHandling: orderData.requiresSpecialHandling || false,
-        guestInfo: {
-          email: 'placeholder@example.com',
-          firstName: 'placeholder',
-          lastName: 'placeholder',
-          phone: 'placeholder'
-        },
-        isConsumerOrder: true,
-        // Add zone information if provided
-        ...(zoneId && { deliveryZone: new mongoose.Types.ObjectId(zoneId) }),
-        ...(zonePrice && { zonePrice })
+        paymentMethod: orderData.paymentMethod,
+        paymentStatus: 'PENDING',
+        paymentReference: this.generatePaymentReference(),
+        deliveryZone: zoneId ? new mongoose.Types.ObjectId(zoneId) : undefined,
+        zonePrice,
+        estimatedDeliveryDate: this.calculateEstimatedDeliveryDate(orderData.isExpressDelivery || false)
       }], { session });
 
       await session.commitTransaction();
       return this.toOrderResponse(order[0]);
-
     } catch (error) {
       await session.abortTransaction();
       throw error;
@@ -604,5 +609,30 @@ export class OrderCrud {
     } catch (error) {
       throw error;
     }
+  }
+
+  async findOrdersByStatus(
+    status: OrderStatus,
+    page: number,
+    limit: number
+  ): Promise<{ orders: IOrder[]; total: number }> {
+    const skip = (page - 1) * limit;
+    const query = { status };
+
+    const [orders, total] = await Promise.all([
+      OrderSchema.find(query)
+        .populate('pickupAddress')
+        .populate('deliveryAddress')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      OrderSchema.countDocuments(query)
+    ]);
+
+    return {
+      orders: orders.map(order => this.toOrderResponse(order)),
+      total
+    };
   }
 }

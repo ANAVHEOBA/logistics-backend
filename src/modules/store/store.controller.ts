@@ -7,6 +7,9 @@ import { OrderCrud } from '../order/order.crud';
 import { EmailService } from '../../services/email.service';  
 import { ICreateGuestOrderRequest } from '../order/order.model';
 import mongoose from 'mongoose';
+import { AddressCrud } from '../address/address.crud';
+import { ICreateAddressRequest } from '../address/address.model';
+import { PaginationOptions, PaginatedResponse, StoreOrder } from './store.types';
 
 // First, update the AuthRequest interface to be more explicit
 interface AuthRequest extends Request {
@@ -22,12 +25,14 @@ export class StoreController {
   private productCrud: ProductCrud;
   private orderCrud: OrderCrud;
   private emailService: EmailService;
+  private addressCrud: AddressCrud;
 
   constructor() {
     this.storeCrud = new StoreCrud();
     this.productCrud = new ProductCrud();
     this.orderCrud = new OrderCrud();
     this.emailService = new EmailService();
+    this.addressCrud = new AddressCrud();
   }
 
   createStore = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -180,7 +185,7 @@ export class StoreController {
         });
         return;
       }
-
+  
       const store = await this.storeCrud.findByUserId(userId);
       if (!store) {
         res.status(404).json({
@@ -189,23 +194,29 @@ export class StoreController {
         });
         return;
       }
-
-      // Get store metrics and other dashboard data
-      const metrics = await this.storeCrud.getStoreMetrics(store._id.toString());
-
+  
+      const [revenue, productPerformance, recentOrders] = await Promise.all([
+        this.storeCrud.getStoreRevenue(store._id.toString()),
+        this.storeCrud.getProductPerformance(store._id.toString()),
+        this.storeCrud.getStoreOrders(store._id.toString(), { limit: 5 })
+      ]);
+  
       res.status(200).json({
         success: true,
         data: {
-          store,
-          metrics,
-          setupCompletion: this.calculateSetupCompletion(store)
+          stats: {
+            revenue,
+            orders: recentOrders.total  // Changed from recentOrders.pagination.total
+          },
+          recentOrders: recentOrders.data,  // Changed from recentOrders.orders
+          topProducts: productPerformance
         }
       });
     } catch (error) {
-      console.error('Get dashboard error:', error);
+      console.error('Get store dashboard error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get dashboard data'
+        message: 'Failed to get store dashboard'
       });
     }
   };
@@ -588,6 +599,353 @@ export class StoreController {
       res.status(500).json({
         success: false,
         message: 'Failed to list stores'
+      });
+    }
+  };
+
+  addStoreAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      // First, check if user has a store
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found. Please create a store first'
+        });
+        return;
+      }
+
+      // Create address for the store
+      const addressData: ICreateAddressRequest = {
+        ...req.body,
+        label: 'Store Address',
+        isDefault: true
+      };
+
+      const storeAddress = await this.addressCrud.createAddress(userId, addressData);
+
+      res.status(201).json({
+        success: true,
+        data: {
+          address: storeAddress
+        }
+      });
+    } catch (error) {
+      console.error('Add store address error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to add store address'
+      });
+    }
+  };
+
+  updateStoreAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      // First, check if user has a store
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      // Find the existing store address
+      const addresses = await this.addressCrud.findUserAddresses(userId);
+      const storeAddress = addresses.find(addr => addr.label === 'Store Address');
+
+      if (!storeAddress) {
+        res.status(404).json({
+          success: false,
+          message: 'Store address not found. Please add a store address first'
+        });
+        return;
+      }
+
+      // Update the address
+      const updatedAddress = await this.addressCrud.updateAddress(
+        storeAddress._id,
+        userId,
+        {
+          ...req.body,
+          label: 'Store Address',
+          isDefault: true
+        }
+      );
+
+      res.status(200).json({
+        success: true,
+        data: {
+          address: updatedAddress
+        }
+      });
+    } catch (error) {
+      console.error('Update store address error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update store address'
+      });
+    }
+  };
+
+  getStoreOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      const { page = 1, limit = 10, status } = req.query;
+      const paginationOptions: PaginationOptions = {
+        page: Number(page),
+        limit: Number(limit),
+        status: status as string
+      };
+
+      const response = await this.storeCrud.getStoreOrders(
+        store._id.toString(),
+        paginationOptions
+      );
+
+      res.status(200).json({
+        success: true,
+        data: {
+          orders: response.data,
+          pagination: {
+            total: response.total,
+            page: response.page,
+            totalPages: response.totalPages
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get store orders error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store orders'
+      });
+    }
+  };
+
+  getStoreOrderDetails = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      const { orderId } = req.params;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      const order = await this.storeCrud.getStoreOrderDetails(
+        store._id.toString(),
+        orderId
+      );
+
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: order
+      });
+    } catch (error) {
+      console.error('Get store order details error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get order details'
+      });
+    }
+  };
+
+  markOrderReady = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      const { orderId } = req.params;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      // Update order status to READY_FOR_PICKUP
+      const order = await this.storeCrud.updateOrderReadyStatus(
+        store._id.toString(),
+        orderId,
+        true // Mark as ready
+      );
+
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+        return;
+      }
+
+      // Send notification to admin about the order being ready for pickup
+      await this.emailService.sendStoreOrderNotification(
+        store.contactInfo.email,
+        order,
+        order.items
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Order marked as ready for pickup',
+        data: order
+      });
+    } catch (error) {
+      console.error('Mark order ready error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to mark order as ready'
+      });
+    }
+  };
+
+  getStoreRevenue = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      // Get basic revenue stats
+      const revenue = await this.storeCrud.getStoreRevenue(store._id.toString());
+
+      // If detailed analysis is requested
+      const { startDate, endDate } = req.query;
+      let detailedRevenue;
+      if (startDate && endDate) {
+        detailedRevenue = await this.storeCrud.getDetailedRevenue(
+          store._id.toString(),
+          new Date(startDate as string),
+          new Date(endDate as string)
+        );
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          summary: revenue,
+          details: detailedRevenue
+        }
+      });
+    } catch (error) {
+      console.error('Get store revenue error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store revenue'
+      });
+    }
+  };
+
+  getProductPerformance = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      const performance = await this.storeCrud.getProductPerformance(store._id.toString());
+
+      res.status(200).json({
+        success: true,
+        data: performance
+      });
+    } catch (error) {
+      console.error('Get product performance error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get product performance'
       });
     }
   };

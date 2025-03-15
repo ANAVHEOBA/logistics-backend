@@ -36,6 +36,7 @@ export interface IManualAddress {
   postalCode: string;
   recipientName: string;
   recipientPhone: string;
+  recipientEmail?: string;
 }
 
 export interface IDeliveryAddress {
@@ -225,6 +226,7 @@ export interface IConsumerOrderRequest {
   paymentMethod: PaymentMethod;
   paymentStatus?: PaymentStatus;
   paymentReference?: string;
+  totalPrice?: number;  // Add this field
   bankAccountDetails?: {
     accountName: string;
     accountNumber: string;

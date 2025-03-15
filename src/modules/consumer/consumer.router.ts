@@ -23,4 +23,10 @@ router.post('/favorite-store/:storeId', consumerController.addFavoriteStore);
 router.delete('/favorite-store/:storeId', consumerController.removeFavoriteStore);
 router.put('/preferred-categories', consumerController.updatePreferredCategories);
 
+// Add new route for getting store's default address
+router.get(
+  '/store/:storeId/pickup-address',
+  consumerController.getStorePickupAddress
+);
+
 export default router;
