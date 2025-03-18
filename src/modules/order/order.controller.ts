@@ -442,7 +442,7 @@ export class OrderController {
 
   public async getConsumerOrders(req: Request, res: Response): Promise<void> {
     try {
-      const consumerId = req.user!.userId;
+      const consumerId = req.consumer!.consumerId;
       const orders = await this.orderCrud.findConsumerOrders(consumerId);
 
       res.status(200).json({

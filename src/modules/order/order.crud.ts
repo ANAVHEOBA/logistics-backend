@@ -516,8 +516,33 @@ export class OrderCrud {
     } as IOrder;
   }
 
-  public async findConsumerOrders(consumerId: string): Promise<any[]> {
-    return this.model.find({ consumerId });
+  async findConsumerOrders(
+    consumerId: string, 
+    page: number = 1, 
+    limit: number = 10
+  ): Promise<{ orders: IOrder[]; total: number }> {
+    try {
+      const skip = (page - 1) * limit;
+      const query = { userId: consumerId };
+
+      const [orders, total] = await Promise.all([
+        OrderSchema.find(query)
+          .populate('pickupAddress')
+          .populate('deliveryAddress')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .exec(),
+        OrderSchema.countDocuments(query)
+      ]);
+
+      return {
+        orders: orders.map(order => this.toOrderResponse(order)),
+        total
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   public async findConsumerOrderById(orderId: string, consumerId: string): Promise<any | null> {
