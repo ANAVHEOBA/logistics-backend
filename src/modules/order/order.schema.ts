@@ -132,7 +132,16 @@ const orderSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['PENDING', 'CONFIRMED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED', 'FAILED_DELIVERY'],
+    enum: [
+      'PENDING',
+      'CONFIRMED',
+      'READY_FOR_PICKUP',
+      'PICKED_UP',
+      'IN_TRANSIT',
+      'DELIVERED',
+      'CANCELLED',
+      'FAILED_DELIVERY'
+    ],
     default: 'PENDING'
   },
   trackingNumber: {

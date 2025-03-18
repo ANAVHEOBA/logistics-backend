@@ -5,6 +5,7 @@ export type PackageSize = 'SMALL' | 'MEDIUM' | 'LARGE' | 'EXTRA_LARGE';
 export type OrderStatus = 
   | 'PENDING' 
   | 'CONFIRMED' 
+  | 'READY_FOR_PICKUP'
   | 'PICKED_UP' 
   | 'IN_TRANSIT' 
   | 'DELIVERED' 
