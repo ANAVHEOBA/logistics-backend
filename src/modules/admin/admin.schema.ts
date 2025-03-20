@@ -48,6 +48,31 @@ const adminSchema = new Schema({
       default: Date.now
     },
     notes: String
+  }],
+  notifications: [{
+    orderId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Order',
+      required: true
+    },
+    type: {
+      type: String,
+      required: true
+    },
+    status: {
+      type: String,
+      default: 'UNREAD'
+    },
+    details: {
+      orderNumber: String,
+      amount: Number,
+      paymentReference: String,
+      consumerName: String
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
   }]
 }, {
   timestamps: true

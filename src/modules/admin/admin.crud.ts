@@ -144,8 +144,8 @@ export class AdminCrud {
     status: string;
     details: any;
   }): Promise<void> {
-    // Find admin(s) to notify
-    const admins = await AdminSchema.find({ role: 'PAYMENT_ADMIN' });
+    // Should be modified to:
+    const admins = await AdminSchema.find({ role: 'admin' });
     
     // Create notification for each relevant admin
     await Promise.all(

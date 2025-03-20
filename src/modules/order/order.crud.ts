@@ -687,6 +687,11 @@ export class OrderCrud {
         }
       },
       { new: true }
-    );
+    )
+    // Add populate to get user details
+    .populate({
+      path: 'userId',
+      select: 'firstName lastName'
+    });
   }
 }
