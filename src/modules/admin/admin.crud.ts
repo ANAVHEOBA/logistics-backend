@@ -2,6 +2,24 @@ import { AdminSchema } from './admin.schema';
 import { IAdmin, IAdminDocument, IAdminResponse, IOrderStatusUpdate } from './admin.model';
 import { Types } from 'mongoose';
 
+interface INotification {
+  _id?: string;
+  orderId: string;
+  type: string;
+  status: string;
+  details: {
+    orderNumber: string;
+    amount: number;
+    paymentReference: string;
+    consumerName: string;
+  };
+  createdAt: Date;
+}
+
+interface IAdminWithNotifications extends IAdminDocument {
+  notifications?: INotification[];
+}
+
 export class AdminCrud {
   async findByEmail(email: string): Promise<IAdminDocument | null> {
     try {
@@ -118,5 +136,65 @@ export class AdminCrud {
       console.error('Failed to record email notification:', error);
       throw error;
     }
+  }
+
+  async createPaymentNotification(notification: {
+    orderId: string;
+    type: string;
+    status: string;
+    details: any;
+  }): Promise<void> {
+    // Find admin(s) to notify
+    const admins = await AdminSchema.find({ role: 'PAYMENT_ADMIN' });
+    
+    // Create notification for each relevant admin
+    await Promise.all(
+      admins.map(admin =>
+        AdminSchema.findByIdAndUpdate(
+          admin._id,
+          {
+            $push: {
+              notifications: {
+                ...notification,
+                createdAt: new Date()
+              }
+            }
+          }
+        )
+      )
+    );
+  }
+
+  async getPaymentNotifications(
+    adminId: string,
+    page: number,
+    limit: number
+  ): Promise<{ notifications: INotification[]; total: number }> {
+    const skip = (page - 1) * limit;
+    
+    const admin = await AdminSchema.findById(adminId) as IAdminWithNotifications;
+    if (!admin) return { notifications: [], total: 0 };
+
+    const notifications = admin.notifications || [];
+    const paymentNotifications = notifications.filter((n: INotification) => n.type === 'NEW_PAYMENT');
+    
+    return {
+      notifications: paymentNotifications.slice(skip, skip + limit),
+      total: paymentNotifications.length
+    };
+  }
+
+  async markNotificationRead(adminId: string, notificationId: string): Promise<void> {
+    await AdminSchema.updateOne(
+      { 
+        _id: adminId,
+        'notifications._id': notificationId 
+      },
+      {
+        $set: {
+          'notifications.$.status': 'READ'
+        }
+      }
+    );
   }
 } 

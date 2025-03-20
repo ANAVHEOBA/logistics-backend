@@ -14,6 +14,7 @@ import { ConsumerCrud } from '../consumer/consumer.crud';
 import { ZoneCrud } from '../zone/zone.crud';
 import { config } from '../../config/environment';
 import { generatePaymentReference } from '../../utils/payment.helper';
+import { AdminCrud } from '../admin/admin.crud';
 
 export class OrderController {
   private orderCrud: OrderCrud;
@@ -24,6 +25,7 @@ export class OrderController {
   private storeCrud: StoreCrud;
   private consumerCrud: ConsumerCrud;
   private zoneCrud: ZoneCrud;
+  private adminCrud: AdminCrud;
 
   constructor() {
     this.orderCrud = new OrderCrud();
@@ -34,6 +36,7 @@ export class OrderController {
     this.storeCrud = new StoreCrud();
     this.consumerCrud = new ConsumerCrud();
     this.zoneCrud = new ZoneCrud();
+    this.adminCrud = new AdminCrud();
   }
 
   // Helper method to convert IUserDocument to IUser
@@ -589,5 +592,65 @@ export class OrderController {
         message: 'Failed to get payment instructions'
       });
     }
+  }
+
+  public async markOrderPayment(req: Request, res: Response): Promise<void> {
+    try {
+      const { orderId } = req.params;
+      const consumerId = req.consumer!.consumerId;
+      const { paymentMethod, amount } = req.body;
+
+      // Generate payment reference
+      const paymentReference = generatePaymentReference();
+
+      const order = await this.orderCrud.markOrderPayment(orderId, consumerId, {
+        paymentMethod,
+        paymentReference,
+        amount
+      });
+
+      if (!order) {
+        res.status(404).json({
+          success: false,
+          message: 'Order not found or unauthorized'
+        });
+        return;
+      }
+
+      // Notify admin about new payment
+      await this.notifyAdminOfNewPayment(order);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          message: 'Payment marked successfully',
+          order
+        }
+      });
+    } catch (error) {
+      console.error('Mark payment error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to mark payment'
+      });
+    }
+  }
+
+  private async notifyAdminOfNewPayment(order: any): Promise<void> {
+    // Send email notification to admin
+    await this.emailService.sendPaymentNotification(order);
+    
+    // Create notification record in admin notifications
+    await this.adminCrud.createPaymentNotification({
+      orderId: order._id,
+      type: 'NEW_PAYMENT',
+      status: 'UNREAD',
+      details: {
+        orderNumber: order.trackingNumber,
+        amount: order.paymentAmount,
+        paymentReference: order.paymentReference,
+        consumerName: `${order.userId.firstName} ${order.userId.lastName}`
+      }
+    });
   }
 }

@@ -39,4 +39,15 @@ router.get('/orders/:orderId/receipts', adminController.getOrderReceipts);
 // Add stores endpoint
 router.get('/stores', adminController.getAllStores);
 
+// Payment notification routes
+router.get(
+  '/notifications/payments',
+  adminController.getPaymentNotifications
+);
+
+router.patch(
+  '/notifications/:notificationId/mark-read',
+  adminController.markNotificationRead
+);
+
 export default router;

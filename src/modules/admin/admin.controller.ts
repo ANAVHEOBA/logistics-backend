@@ -768,4 +768,49 @@ export class AdminController {
       });
     }
   };
+
+  getPaymentNotifications = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const adminId = req.admin!.adminId;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      const notifications = await this.adminCrud.getPaymentNotifications(
+        adminId,
+        page,
+        limit
+      );
+
+      res.status(200).json({
+        success: true,
+        data: notifications
+      });
+    } catch (error) {
+      console.error('Get payment notifications error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get payment notifications'
+      });
+    }
+  };
+
+  markNotificationRead = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const adminId = req.admin!.adminId;
+      const { notificationId } = req.params;
+
+      await this.adminCrud.markNotificationRead(adminId, notificationId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Notification marked as read'
+      });
+    } catch (error) {
+      console.error('Mark notification read error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to mark notification as read'
+      });
+    }
+  };
 }

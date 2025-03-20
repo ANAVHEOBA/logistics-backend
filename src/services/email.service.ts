@@ -333,6 +333,28 @@ export class EmailService {
 
     await EmailService.sendEmail(consumer.email, subject, html);
   }
+
+  async sendPaymentNotification(order: any): Promise<void> {
+    const emailData = {
+      to: 'wisdomabraham92@gmail.com', // Updated admin email
+      subject: `New Payment Notification - Order #${order.trackingNumber}`,
+      html: `
+        <h2>New Payment Notification</h2>
+        <p>New payment has been marked for Order #${order.trackingNumber}</p>
+        <p><strong>Details:</strong></p>
+        <ul>
+          <li>Amount: ₦${order.paymentAmount}</li>
+          <li>Reference: ${order.paymentReference}</li>
+          <li>Customer: ${order.userId.firstName} ${order.userId.lastName}</li>
+        </ul>
+        <p>Please verify the payment in the admin dashboard.</p>
+        
+      `
+    };
+
+    // Use the static method
+    await EmailService.sendEmail(emailData.to, emailData.subject, emailData.html);
+  }
 }
 
 // Export the sendEmail function separately

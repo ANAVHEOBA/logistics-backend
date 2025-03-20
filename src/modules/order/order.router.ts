@@ -63,6 +63,13 @@ router.post(
   (req: Request, res: Response) => orderController.uploadPaymentReceipt(req, res)
 );
 
+router.post(
+  '/consumer/mark-payment/:orderId',
+  authMiddleware,
+  authenticateConsumer,
+  (req: Request, res: Response) => orderController.markOrderPayment(req, res)
+);
+
 // All other routes require authentication
 router.use(authMiddleware);
 

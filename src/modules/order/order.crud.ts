@@ -7,7 +7,8 @@ import {
   OrderStatus,
   IOrderItemBase,
   IConsumerOrderRequest,
-  PaymentStatus
+  PaymentStatus,
+  PaymentMethod
 } from './order.model';
 import { OrderItem } from '../orderItem/orderItem.schema';
 import mongoose, { Model } from 'mongoose';
@@ -659,5 +660,33 @@ export class OrderCrud {
       orders: orders.map(order => this.toOrderResponse(order)),
       total
     };
+  }
+
+  async markOrderPayment(orderId: string, consumerId: string, paymentDetails: {
+    paymentMethod: PaymentMethod;
+    paymentReference: string;
+    amount: number;
+  }): Promise<IOrder | null> {
+    return this.model.findOneAndUpdate(
+      { _id: orderId, userId: consumerId },
+      { 
+        $set: {
+          paymentStatus: 'PENDING',
+          paymentMethod: paymentDetails.paymentMethod,
+          paymentReference: paymentDetails.paymentReference,
+          paymentAmount: paymentDetails.amount,
+          paymentDate: new Date()
+        },
+        $push: {
+          paymentHistory: {
+            status: 'PENDING',
+            date: new Date(),
+            reference: paymentDetails.paymentReference,
+            amount: paymentDetails.amount
+          }
+        }
+      },
+      { new: true }
+    );
   }
 }
