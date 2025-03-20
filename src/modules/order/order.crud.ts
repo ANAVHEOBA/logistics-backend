@@ -667,31 +667,36 @@ export class OrderCrud {
     paymentReference: string;
     amount: number;
   }): Promise<IOrder | null> {
-    return this.model.findOneAndUpdate(
-      { _id: orderId, userId: consumerId },
-      { 
-        $set: {
-          paymentStatus: 'PENDING',
-          paymentMethod: paymentDetails.paymentMethod,
-          paymentReference: paymentDetails.paymentReference,
-          paymentAmount: paymentDetails.amount,
-          paymentDate: new Date()
-        },
-        $push: {
-          paymentHistory: {
-            status: 'PENDING',
-            date: new Date(),
-            reference: paymentDetails.paymentReference,
-            amount: paymentDetails.amount
+    try {
+      const order = await OrderSchema.findOneAndUpdate(
+        { _id: orderId, userId: consumerId },
+        { 
+          $set: {
+            paymentStatus: 'PENDING',
+            paymentMethod: paymentDetails.paymentMethod,
+            paymentReference: paymentDetails.paymentReference,
+            paymentAmount: paymentDetails.amount,
+            paymentDate: new Date()
+          },
+          $push: {
+            paymentHistory: {
+              status: 'PENDING',
+              date: new Date(),
+              reference: paymentDetails.paymentReference,
+              amount: paymentDetails.amount
+            }
           }
-        }
-      },
-      { new: true }
-    )
-    // Add populate to get user details
-    .populate({
-      path: 'userId',
-      select: 'firstName lastName'
-    });
+        },
+        { new: true }
+      )
+      .populate('userId', 'firstName lastName')
+      .populate('pickupAddress')
+      .populate('deliveryAddress');
+
+      return order ? this.toOrderResponse(order) : null;
+    } catch (error) {
+      console.error('Mark order payment error:', error);
+      throw error;
+    }
   }
 }
