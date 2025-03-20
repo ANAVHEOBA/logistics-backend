@@ -668,7 +668,17 @@ export class OrderCrud {
     amount: number;
   }): Promise<IOrder | null> {
     try {
-      const order = await OrderSchema.findOneAndUpdate(
+      // First find the order to verify it exists and belongs to the consumer
+      const existingOrder = await this.model.findOne({ 
+        _id: orderId, 
+        userId: consumerId 
+      });
+
+      if (!existingOrder) {
+        return null;
+      }
+
+      const order = await this.model.findOneAndUpdate(
         { _id: orderId, userId: consumerId },
         { 
           $set: {
@@ -689,7 +699,10 @@ export class OrderCrud {
         },
         { new: true }
       )
-      .populate('userId', 'firstName lastName')
+      .populate({
+        path: 'userId',
+        select: 'firstName lastName email'
+      })
       .populate('pickupAddress')
       .populate('deliveryAddress');
 

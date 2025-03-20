@@ -600,6 +600,15 @@ export class OrderController {
       const consumerId = req.consumer!.consumerId;
       const { paymentMethod, amount } = req.body;
 
+      // Validate input
+      if (!paymentMethod || !amount) {
+        res.status(400).json({
+          success: false,
+          message: 'Payment method and amount are required'
+        });
+        return;
+      }
+
       // Generate payment reference
       const paymentReference = generatePaymentReference();
 
@@ -617,14 +626,29 @@ export class OrderController {
         return;
       }
 
-      // Notify admin about new payment
-      await this.notifyAdminOfNewPayment(order);
+      try {
+        // Notify admin about new payment
+        await this.notifyAdminOfNewPayment(order);
+      } catch (notificationError) {
+        // Log notification error but don't fail the request
+        console.error('Admin notification error:', notificationError);
+      }
 
       res.status(200).json({
         success: true,
         data: {
           message: 'Payment marked successfully',
-          order
+          order: {
+            _id: order._id,
+            trackingNumber: order.trackingNumber,
+            paymentStatus: order.paymentStatus,
+            paymentMethod: order.paymentMethod,
+            paymentReference: order.paymentReference,
+            amount: order.price,
+            paymentDate: order.paymentDate,
+            status: order.status,
+            price: order.price
+          }
         }
       });
     } catch (error) {
@@ -647,7 +671,7 @@ export class OrderController {
       status: 'UNREAD',
       details: {
         orderNumber: order.trackingNumber,
-        amount: order.paymentAmount,
+        amount: order.price,
         paymentReference: order.paymentReference,
         consumerName: `${order.userId.firstName} ${order.userId.lastName}`
       }
