@@ -356,7 +356,8 @@ export class StoreCrud {
       { 
         $set: { 
           'storeReadyStatus': isReady,
-          'storeReadyAt': isReady ? new Date() : null
+          'storeReadyAt': isReady ? new Date() : null,
+          'status': isReady ? 'READY_FOR_PICKUP' : 'PENDING'
         } 
       },
       { new: true }

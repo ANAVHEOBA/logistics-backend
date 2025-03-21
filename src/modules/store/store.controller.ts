@@ -829,11 +829,30 @@ export class StoreController {
         return;
       }
 
+      // Get current order to check status
+      const currentOrder = await this.orderCrud.findById(orderId);
+      if (!currentOrder) {
+        res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+        return;
+      }
+
+      // Validate order status transition
+      if (currentOrder.status !== 'PENDING' && currentOrder.status !== 'CONFIRMED') {
+        res.status(400).json({
+          success: false,
+          message: `Cannot mark order as ready. Current status: ${currentOrder.status}`
+        });
+        return;
+      }
+
       // Update order status to READY_FOR_PICKUP
       const order = await this.storeCrud.updateOrderReadyStatus(
         store._id.toString(),
         orderId,
-        true // Mark as ready
+        true
       );
 
       if (!order) {
