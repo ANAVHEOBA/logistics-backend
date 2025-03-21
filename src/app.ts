@@ -17,7 +17,8 @@ const app = express();
 const corsOptions = {
   origin: [
     'http://localhost:3000',
-    'http://localhost:3001',//   // React development server
+    'http://localhost:3001',
+    'http://localhost:3002',//   // React development server
     'https://your-frontend-domain.com', // Add your production frontend domain
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
