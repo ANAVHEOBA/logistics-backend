@@ -305,6 +305,14 @@ export class StoreCrud {
       { $unwind: '$items' },
       { $match: { 'items.storeId': new mongoose.Types.ObjectId(storeId) } },
       {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      {
         $group: {
           _id: '$_id',
           orderId: { $first: '$_id' },
@@ -312,7 +320,17 @@ export class StoreCrud {
           status: { $first: '$status' },
           paymentStatus: { $first: '$paymentStatus' },
           createdAt: { $first: '$createdAt' },
-          items: { $push: '$items' },
+          items: {
+            $push: {
+              $mergeObjects: [
+                '$items',
+                {
+                  productName: { $arrayElemAt: ['$productDetails.name', 0] },
+                  productImage: { $arrayElemAt: ['$productDetails.images', 0] }
+                }
+              ]
+            }
+          },
           pickupAddress: { $first: '$pickupAddress' },
           deliveryAddress: { $first: '$deliveryAddress' },
           specialInstructions: { $first: '$specialInstructions' },
