@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { OrderSchema } from '../order/order.schema';
 import { ProductSchema } from '../product/product.schema';
 import { PaginationOptions, PaginatedResponse, StoreOrder } from './store.types';
+import { OrderStatus } from '../order/order.model';
 
 interface ListStoresParams {
   filter?: Record<string, any>;
@@ -366,7 +367,7 @@ export class StoreCrud {
 
   async getStoreRevenue(storeId: string) {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
+    today.setHours(0, 0, 0, 0);
     
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -380,13 +381,10 @@ export class StoreCrud {
       {
         $match: {
           'items.storeId': new mongoose.Types.ObjectId(storeId),
-          status: { $in: ['DELIVERED', 'CONFIRMED'] }, // Include both delivered and confirmed orders
-          paymentStatus: 'VERIFIED' // Only count verified payments
+          status: 'DELIVERED'  // Only check for DELIVERED status
         }
       },
-      // Unwind items to process each item separately
       { $unwind: '$items' },
-      // Match only items for this store
       {
         $match: {
           'items.storeId': new mongoose.Types.ObjectId(storeId)
@@ -520,7 +518,10 @@ export class StoreCrud {
       {
         $match: {
           'items.storeId': new mongoose.Types.ObjectId(storeId),
-          status: 'DELIVERED'
+          status: { 
+            $nin: ['PENDING', 'CANCELLED', 'FAILED_DELIVERY'] // Only include orders that have been at least confirmed
+          },
+          paymentStatus: 'VERIFIED'
         }
       },
       { $unwind: '$items' },
@@ -552,5 +553,53 @@ export class StoreCrud {
       { $sort: { totalRevenue: -1 } },
       { $limit: 10 }
     ]);
+  }
+
+  // Add a new method to validate order status transitions
+  async validateOrderStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): Promise<boolean> {
+    const statusFlow: Record<OrderStatus, OrderStatus[]> = {
+      'PENDING': ['CONFIRMED'],
+      'CONFIRMED': ['READY_FOR_PICKUP', 'CANCELLED'],
+      'READY_FOR_PICKUP': ['PICKED_UP', 'CANCELLED'],
+      'PICKED_UP': ['IN_TRANSIT', 'CANCELLED'],
+      'IN_TRANSIT': ['DELIVERED', 'FAILED_DELIVERY'],
+      'DELIVERED': [], // Terminal state
+      'CANCELLED': [], // Terminal state
+      'FAILED_DELIVERY': ['PENDING'] // Can retry delivery
+    };
+
+    const allowedTransitions = statusFlow[currentStatus] || [];
+    return allowedTransitions.includes(newStatus);
+  }
+
+  // Add method to update order status
+  async updateOrderStatus(orderId: string, storeId: string, newStatus: OrderStatus): Promise<any> {
+    const order = await OrderSchema.findOne({
+      _id: new mongoose.Types.ObjectId(orderId),
+      'items.storeId': new mongoose.Types.ObjectId(storeId)
+    });
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    const isValidTransition = await this.validateOrderStatusTransition(order.status, newStatus);
+    if (!isValidTransition) {
+      throw new Error(`Invalid status transition from ${order.status} to ${newStatus}`);
+    }
+
+    return await OrderSchema.findOneAndUpdate(
+      { 
+        _id: new mongoose.Types.ObjectId(orderId),
+        'items.storeId': new mongoose.Types.ObjectId(storeId)
+      },
+      { 
+        $set: { 
+          status: newStatus,
+          updatedAt: new Date()
+        } 
+      },
+      { new: true }
+    );
   }
 } 
