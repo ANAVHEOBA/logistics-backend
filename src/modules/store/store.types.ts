@@ -100,4 +100,20 @@ export interface StoreOrder {
   pickupAddress: any;
   deliveryAddress: any;
   specialInstructions?: string;
+}
+
+export interface StoreCustomer {
+  consumerId: string;
+  name: string;
+  email: string;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderDate: Date;
+}
+
+export interface StoreCustomersResponse {
+  customers: StoreCustomer[];
+  total: number;
+  page: number;
+  totalPages: number;
 } 

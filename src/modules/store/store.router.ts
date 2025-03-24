@@ -22,6 +22,7 @@ router.get('/orders', authMiddleware, storeController.getStoreOrders);
 router.get('/revenue', authMiddleware, storeController.getStoreRevenue);
 router.get('/products/performance', authMiddleware, storeController.getProductPerformance);
 router.get('/dashboard', authMiddleware, storeController.getStoreDashboard);
+router.get('/customers', authMiddleware, storeController.getStoreCustomers);
 
 // Store order management routes
 router.get('/orders/:orderId', authMiddleware, storeController.getStoreOrderDetails);

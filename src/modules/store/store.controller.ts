@@ -968,4 +968,57 @@ export class StoreController {
       });
     }
   };
+
+  getStoreCustomers = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      // Get store for this user
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      // Get pagination parameters
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      // Get customers
+      const { customers, total } = await this.storeCrud.getStoreCustomers(
+        store._id.toString(),
+        page,
+        limit
+      );
+
+      res.status(200).json({
+        success: true,
+        data: {
+          customers,
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get store customers error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store customers'
+      });
+    }
+  };
 } 

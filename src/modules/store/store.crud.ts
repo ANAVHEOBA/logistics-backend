@@ -2,7 +2,12 @@ import { Store, IStore, StoreStatus, StoreCategory } from './store.model';
 import mongoose from 'mongoose';
 import { OrderSchema } from '../order/order.schema';
 import { ProductSchema } from '../product/product.schema';
-import { PaginationOptions, PaginatedResponse, StoreOrder } from './store.types';
+import { 
+  PaginationOptions, 
+  PaginatedResponse, 
+  StoreOrder,
+  StoreCustomer
+} from './store.types';
 import { OrderStatus } from '../order/order.model';
 
 interface ListStoresParams {
@@ -601,5 +606,88 @@ export class StoreCrud {
       },
       { new: true }
     );
+  }
+
+  async getStoreCustomers(
+    storeId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ customers: StoreCustomer[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    // Aggregate to get customer data from orders
+    const aggregation = await OrderSchema.aggregate([
+      // Match orders for this store
+      { $match: { 'items.storeId': new mongoose.Types.ObjectId(storeId) } },
+      
+      // Group by consumer
+      { 
+        $group: {
+          _id: '$userId',
+          totalOrders: { $sum: 1 },
+          totalSpent: { 
+            $sum: {
+              $reduce: {
+                input: '$items',
+                initialValue: 0,
+                in: {
+                  $add: [
+                    '$$value',
+                    { $multiply: ['$$this.price', '$$this.quantity'] }
+                  ]
+                }
+              }
+            }
+          },
+          lastOrderDate: { $max: '$createdAt' }
+        }
+      },
+      
+      // Lookup consumer details
+      {
+        $lookup: {
+          from: 'consumers',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'consumer'
+        }
+      },
+
+      // Project required fields
+      {
+        $project: {
+          _id: 0,
+          consumerId: '$_id',
+          name: { $concat: [
+            { $arrayElemAt: ['$consumer.firstName', 0] },
+            ' ',
+            { $arrayElemAt: ['$consumer.lastName', 0] }
+          ]},
+          email: { $arrayElemAt: ['$consumer.email', 0] },
+          totalOrders: 1,
+          totalSpent: 1,
+          lastOrderDate: 1
+        }
+      },
+
+      // Sort by most recent order
+      { $sort: { lastOrderDate: -1 } },
+      
+      // Skip and limit for pagination
+      { $skip: skip },
+      { $limit: limit }
+    ]);
+
+    // Get total count for pagination
+    const totalCount = await OrderSchema.aggregate([
+      { $match: { 'items.storeId': new mongoose.Types.ObjectId(storeId) } },
+      { $group: { _id: '$userId' } },
+      { $count: 'total' }
+    ]);
+
+    return {
+      customers: aggregation,
+      total: totalCount[0]?.total || 0
+    };
   }
 } 
