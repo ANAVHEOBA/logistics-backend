@@ -199,17 +199,13 @@ function calculateEstimatedDeliveryDate(isExpressDelivery: boolean): Date {
   return date;
 }
 
-// Pre-validate middleware to set calculated fields
+// Remove the pre-validate middleware that's causing the issue
 orderSchema.pre('validate', async function(this: IOrderDocument, next) {
   if (this.isNew) {
     if (!this.trackingNumber) {
       this.trackingNumber = generateTrackingNumber();
     }
     this.estimatedWeight = calculateEstimatedWeight(this.packageSize as PackageSize);
-    
-    // Calculate price including zone
-    this.price = await calculatePrice(this);
-    
     this.estimatedDeliveryDate = calculateEstimatedDeliveryDate(this.isExpressDelivery);
   }
   next();

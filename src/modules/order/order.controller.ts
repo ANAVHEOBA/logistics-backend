@@ -308,6 +308,38 @@ export class OrderController {
     }
   }
 
+  private async calculateProductTotal(items: IConsumerOrderRequest['items']): Promise<number> {
+    let total = 0;
+    for (const item of items) {
+      const product = await this.productCrud.getProductById(item.productId);
+      if (!product) {
+        throw new Error(`Product not found: ${item.productId}`);
+      }
+      
+      // Get base product price
+      let itemPrice = product.price;
+
+      // Add variant prices if any
+      if (item.variantData) {
+        for (const variant of item.variantData) {
+          const matchingVariant = product.variants?.find(v => v.name === variant.name);
+          if (matchingVariant) {
+            const optionIndex = matchingVariant.options.findIndex(
+              option => option === variant.value
+            );
+            if (optionIndex !== -1 && matchingVariant.prices && matchingVariant.prices[optionIndex]) {
+              itemPrice += matchingVariant.prices[optionIndex];
+            }
+          }
+        }
+      }
+      
+      // Multiply by quantity
+      total += itemPrice * item.quantity;
+    }
+    return total;
+  }
+
   public async placeConsumerOrder(req: Request, res: Response): Promise<void> {
     try {
       const consumerId = req.consumer!.consumerId;
@@ -359,16 +391,47 @@ export class OrderController {
       // Set the zone price in Naira
       zonePrice = selectedZone.deliveryPrice;
 
-      // 4. Calculate total price in Naira
+      // 4. Calculate prices
       const productTotal = await this.calculateProductTotal(orderData.items);
-      const totalPrice = productTotal + zonePrice;
+      const deliveryFee = zonePrice;
+      const totalPrice = productTotal + deliveryFee;
 
-      // Create the order with all the necessary information
+      // Create order items with correct prices
+      const orderItems = await Promise.all(orderData.items.map(async (item) => {
+        const product = await this.productCrud.getProductById(item.productId);
+        if (!product) {
+          throw new Error(`Product not found: ${item.productId}`);
+        }
+
+        let itemPrice = product.price;
+        if (item.variantData) {
+          for (const variant of item.variantData) {
+            const matchingVariant = product.variants?.find(v => v.name === variant.name);
+            if (matchingVariant) {
+              const optionIndex = matchingVariant.options.findIndex(
+                option => option === variant.value
+              );
+              if (optionIndex !== -1 && matchingVariant.prices && matchingVariant.prices[optionIndex]) {
+                itemPrice += matchingVariant.prices[optionIndex];
+              }
+            }
+          }
+        }
+
+        return {
+          ...item,
+          price: itemPrice,
+          storeId: orderData.storeId
+        };
+      }));
+
+      // Create the order with the correct total price
       const order = await this.orderCrud.createConsumerOrder(
         consumerId,
         orderData.storeId,
         {
           ...orderData,
+          items: orderItems,
           pickupAddress: {
             type: 'manual',
             manualAddress: pickupAddress
@@ -379,7 +442,7 @@ export class OrderController {
           bankAccountDetails: config.bankAccounts.default
         },
         selectedZone._id.toString(),
-        zonePrice
+        deliveryFee
       );
 
       // Send notifications
@@ -393,7 +456,7 @@ export class OrderController {
             reference: order.paymentReference,
             bankDetails: config.bankAccounts.default,
             amount: totalPrice,
-            deliveryFee: zonePrice,
+            deliveryFee,
             subtotal: productTotal,
             currency: 'NGN',
             instructions: "Please transfer the exact amount in Naira and use your payment reference as the transaction description."
@@ -407,18 +470,6 @@ export class OrderController {
         message: 'Failed to place order'
       });
     }
-  }
-
-  private async calculateProductTotal(items: IConsumerOrderRequest['items']): Promise<number> {
-    let total = 0;
-    for (const item of items) {
-      const product = await this.productCrud.getProductById(item.productId);
-      if (!product) {
-        throw new Error(`Product not found: ${item.productId}`);
-      }
-      total += product.price * item.quantity;
-    }
-    return total;
   }
 
   private async sendOrderNotifications(order: any, store: IStore, consumerId: string): Promise<void> {
@@ -489,9 +540,9 @@ export class OrderController {
           ...order,
           paymentInstructions: {
             reference: order.paymentReference,
-            bankDetails: order.bankAccountDetails,
+            bankDetails: order.bankAccountDetails || config.bankAccounts.default,
             amount: totalPrice,
-            deliveryFee: deliveryFee,
+            deliveryFee,
             subtotal: productTotal,
             currency: 'NGN',
             instructions: "Please transfer the exact amount in Naira and use your payment reference as the transaction description."

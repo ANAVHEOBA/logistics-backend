@@ -138,6 +138,7 @@ export interface IOrder {
     accountNumber: string;
     bankName: string;
   };
+  zonePrice?: number;  // Optional property for zone-based delivery pricing
 }
 
 export interface ICreateOrderRequest {
@@ -211,6 +212,7 @@ export interface IConsumerOrderRequest {
   items: {
     productId: string;
     quantity: number;
+    price?: number;
     variantData?: {
       name: string;
       value: string;
@@ -227,7 +229,7 @@ export interface IConsumerOrderRequest {
   paymentMethod: PaymentMethod;
   paymentStatus?: PaymentStatus;
   paymentReference?: string;
-  totalPrice?: number;  // Add this field
+  totalPrice?: number;
   bankAccountDetails?: {
     accountName: string;
     accountNumber: string;

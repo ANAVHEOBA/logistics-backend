@@ -427,45 +427,26 @@ export class OrderCrud {
     session.startTransaction();
 
     try {
-      // 1. Reserve product stock
-      for (const item of orderData.items) {
-        const success = await this.productCrud.reserveProductStock(
-          item.productId,
-          item.quantity
-        );
-        if (!success) {
-          throw new Error(`Failed to reserve stock for product ${item.productId}`);
-        }
-      }
+      // Calculate product total from the items array
+      const productTotal = orderData.items.reduce((sum, item) => {
+        const itemPrice = item.price || 0;
+        return sum + (itemPrice * item.quantity);
+      }, 0);
 
-      // 2. Get product details and calculate prices
-      const productDetails = await Promise.all(
-        orderData.items.map(item => 
-          this.productCrud.getProductById(item.productId)
-        )
-      );
+      // Calculate final price
+      const totalPrice = orderData.totalPrice || (zonePrice ? productTotal + zonePrice : productTotal);
 
-      // 3. Create order items with product details
-      const orderItems = orderData.items.map((item, index) => ({
-        productId: item.productId,
-        storeId: storeId,
-        quantity: item.quantity,
-        price: productDetails[index]!.price * item.quantity,
-        name: productDetails[index]!.name,
-        variantData: item.variantData
-      }));
-
-      // Calculate product total
-      const productTotal = orderItems.reduce((sum, item) => sum + item.price, 0);
-      
-      // Add zone price to total if applicable
-      const totalPrice = zonePrice ? productTotal + zonePrice : productTotal;
-
-      // 4. Create the order with pickupAddress
+      // Create the order
       const order = await OrderSchema.create([{
         userId: consumerId,
         storeId: storeId,
-        items: orderItems,
+        items: orderData.items.map(item => ({
+          productId: item.productId,
+          storeId: storeId,
+          quantity: item.quantity,
+          price: item.price || 0,
+          variantData: item.variantData
+        })),
         pickupAddress: orderData.pickupAddress,
         deliveryAddress: orderData.deliveryAddress.manualAddress,
         packageSize: orderData.packageSize,
@@ -474,12 +455,12 @@ export class OrderCrud {
         requiresSpecialHandling: orderData.requiresSpecialHandling || false,
         specialInstructions: orderData.specialInstructions,
         status: 'PENDING',
-        price: totalPrice,
+        price: totalPrice, // Use the calculated total price
         paymentMethod: orderData.paymentMethod,
         paymentStatus: 'PENDING',
-        paymentReference: this.generatePaymentReference(),
+        paymentReference: orderData.paymentReference,
         deliveryZone: zoneId ? new mongoose.Types.ObjectId(zoneId) : undefined,
-        zonePrice,
+        zonePrice: zonePrice || 0,
         estimatedDeliveryDate: this.calculateEstimatedDeliveryDate(orderData.isExpressDelivery || false)
       }], { session });
 
@@ -546,8 +527,21 @@ export class OrderCrud {
     }
   }
 
-  public async findConsumerOrderById(orderId: string, consumerId: string): Promise<any | null> {
-    return this.model.findOne({ _id: orderId, consumerId });
+  public async findConsumerOrderById(orderId: string, consumerId: string): Promise<IOrder | null> {
+    try {
+      const order = await OrderSchema.findOne({ 
+        _id: orderId, 
+        userId: consumerId 
+      })
+      .populate('pickupAddress')
+      .populate('deliveryAddress')
+      .exec();
+
+      return order ? this.toOrderResponse(order) : null;
+    } catch (error) {
+      console.error('Find consumer order by id error:', error);
+      throw error;
+    }
   }
 
   public async cancelConsumerOrder(orderId: string, consumerId: string): Promise<any | null> {
