@@ -8,7 +8,8 @@ import {
   IOrderItemBase,
   IConsumerOrderRequest,
   PaymentStatus,
-  PaymentMethod
+  PaymentMethod,
+  PackageSize
 } from './order.model';
 import { OrderItem } from '../orderItem/orderItem.schema';
 import mongoose, { Model } from 'mongoose';
@@ -34,6 +35,42 @@ interface OrderStats {
   revenue: {
     total: number;
     today: number;
+  };
+}
+
+interface OrderAnalytics {
+  totalOrders: number;
+  ordersByStatus: Record<OrderStatus, number>;
+  averageOrderValue: number;
+  orderFrequency: {
+    daily: number;
+    weekly: number;
+    monthly: number;
+  };
+  packageSizeDistribution: Record<PackageSize, number>;
+  deliveryMetrics: {
+    successRate: number;
+    averageDeliveryTime: number;
+    expressDeliveryCount: number;
+  };
+}
+
+interface SpendingAnalytics {
+  totalSpent: number;
+  monthlySpending: Array<{
+    month: string;
+    amount: number;
+    orderCount: number;
+  }>;
+  averageMonthlySpend: number;
+  paymentMethods: Array<{
+    method: PaymentMethod;
+    count: number;
+    total: number;
+  }>;
+  deliveryFees: {
+    total: number;
+    average: number;
   };
 }
 
@@ -705,5 +742,225 @@ export class OrderCrud {
       console.error('Mark order payment error:', error);
       throw error;
     }
+  }
+
+  async getConsumerOrderAnalytics(
+    consumerId: string,
+    timeframe: string
+  ): Promise<OrderAnalytics> {
+    try {
+      const dateFilter = this.getTimeframeFilter(timeframe);
+      const query = {
+        userId: new mongoose.Types.ObjectId(consumerId),
+        createdAt: dateFilter
+      };
+
+      const [orderStats, deliveryStats] = await Promise.all([
+        this.model.aggregate([
+          { $match: query },
+          {
+            $lookup: {
+              from: 'stores',
+              localField: 'items.storeId',
+              foreignField: '_id',
+              as: 'storeDetails'
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              totalOrders: { $sum: 1 },
+              totalAmount: { $sum: '$price' },
+              packageSizes: { $push: '$packageSize' },
+              expressDeliveryCount: {
+                $sum: { $cond: ['$isExpressDelivery', 1, 0] }
+              },
+              storeName: { $first: { $arrayElemAt: ['$storeDetails.storeName', 0] } }
+            }
+          }
+        ]),
+        this.model.aggregate([
+          { $match: { ...query, status: 'DELIVERED' } },
+          {
+            $group: {
+              _id: null,
+              deliveredCount: { $sum: 1 },
+              avgDeliveryTime: {
+                $avg: {
+                  $subtract: ['$deliveryDate', '$createdAt']
+                }
+              }
+            }
+          }
+        ])
+      ]);
+
+      const orderStatusCounts = await this.model.aggregate([
+        { $match: query },
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const stats = orderStats[0] || { 
+        totalOrders: 0, 
+        totalAmount: 0,
+        packageSizes: [],
+        expressDeliveryCount: 0
+      };
+
+      const deliveryMetrics = deliveryStats[0] || {
+        deliveredCount: 0,
+        avgDeliveryTime: 0
+      };
+
+      const packageSizeDistribution = stats.packageSizes.reduce((acc: any, size: PackageSize) => {
+        acc[size] = (acc[size] || 0) + 1;
+        return acc;
+      }, {});
+
+      return {
+        totalOrders: stats.totalOrders,
+        ordersByStatus: orderStatusCounts.reduce((acc: any, curr) => {
+          acc[curr._id] = curr.count;
+          return acc;
+        }, {}),
+        averageOrderValue: stats.totalOrders ? stats.totalAmount / stats.totalOrders : 0,
+        orderFrequency: this.calculateOrderFrequency(stats.totalOrders, timeframe),
+        packageSizeDistribution,
+        deliveryMetrics: {
+          successRate: stats.totalOrders ? 
+            (deliveryMetrics.deliveredCount / stats.totalOrders) * 100 : 0,
+          averageDeliveryTime: deliveryMetrics.avgDeliveryTime / (1000 * 60 * 60 * 24), // Convert to days
+          expressDeliveryCount: stats.expressDeliveryCount
+        }
+      };
+    } catch (error) {
+      console.error('Get consumer order analytics error:', error);
+      throw error;
+    }
+  }
+
+  async getConsumerSpendingAnalytics(
+    consumerId: string,
+    period: string
+  ): Promise<SpendingAnalytics> {
+    try {
+      const monthsToLookBack = this.getPeriodMonths(period);
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - monthsToLookBack);
+
+      const spendingData = await this.model.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(consumerId),
+            createdAt: { $gte: startDate }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$createdAt' },
+              month: { $month: '$createdAt' }
+            },
+            totalSpent: { $sum: '$price' },
+            orderCount: { $sum: 1 },
+            deliveryFees: { $sum: '$zonePrice' },
+            paymentMethods: { $push: '$paymentMethod' }
+          }
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1 } }
+      ]);
+
+      const paymentMethodStats = await this.model.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(consumerId),
+            createdAt: { $gte: startDate }
+          }
+        },
+        {
+          $group: {
+            _id: '$paymentMethod',
+            count: { $sum: 1 },
+            total: { $sum: '$price' }
+          }
+        }
+      ]);
+
+      const monthlySpending = spendingData.map(month => ({
+        month: `${month._id.year}-${month._id.month.toString().padStart(2, '0')}`,
+        amount: month.totalSpent,
+        orderCount: month.orderCount
+      }));
+
+      const totalSpent = monthlySpending.reduce((sum, month) => sum + month.amount, 0);
+
+      return {
+        totalSpent,
+        monthlySpending,
+        averageMonthlySpend: totalSpent / monthlySpending.length || 0,
+        paymentMethods: paymentMethodStats.map(method => ({
+          method: method._id,
+          count: method.count,
+          total: method.total
+        })),
+        deliveryFees: {
+          total: spendingData.reduce((sum, month) => sum + month.deliveryFees, 0),
+          average: spendingData.reduce((sum, month) => sum + month.deliveryFees, 0) / 
+            spendingData.length || 0
+        }
+      };
+    } catch (error) {
+      console.error('Get consumer spending analytics error:', error);
+      throw error;
+    }
+  }
+
+  private getTimeframeFilter(timeframe: string): any {
+    const now = new Date();
+    switch (timeframe) {
+      case 'week':
+        return { $gte: new Date(now.setDate(now.getDate() - 7)) };
+      case 'month':
+        return { $gte: new Date(now.setMonth(now.getMonth() - 1)) };
+      case 'year':
+        return { $gte: new Date(now.setFullYear(now.getFullYear() - 1)) };
+      default:
+        return {}; // All time
+    }
+  }
+
+  private getPeriodMonths(period: string): number {
+    switch (period) {
+      case '3months': return 3;
+      case '6months': return 6;
+      case '1year': return 12;
+      default: return 6;
+    }
+  }
+
+  private calculateOrderFrequency(totalOrders: number, timeframe: string): {
+    daily: number;
+    weekly: number;
+    monthly: number;
+  } {
+    let days: number;
+    switch (timeframe) {
+      case 'week': days = 7; break;
+      case 'month': days = 30; break;
+      case 'year': days = 365; break;
+      default: days = 365; // Default to yearly calculation
+    }
+
+    const daily = totalOrders / days;
+    return {
+      daily,
+      weekly: daily * 7,
+      monthly: daily * 30
+    };
   }
 }

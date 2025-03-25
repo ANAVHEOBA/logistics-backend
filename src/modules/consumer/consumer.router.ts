@@ -29,4 +29,10 @@ router.get(
   consumerController.getStorePickupAddress
 );
 
+// Analytics endpoints
+router.get('/analytics/overview', consumerController.getAnalyticsOverview as express.RequestHandler);
+router.get('/analytics/orders', consumerController.getOrderAnalytics as express.RequestHandler);
+router.get('/analytics/spending', consumerController.getSpendingAnalytics as express.RequestHandler);
+router.get('/analytics/preferences', consumerController.getPreferencesAnalytics as express.RequestHandler);
+
 export default router;

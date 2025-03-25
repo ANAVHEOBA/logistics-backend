@@ -2,6 +2,57 @@ import { ConsumerSchema } from './consumer.schema';
 import { IConsumerDocument, IConsumerBase } from './consumer.model';
 import mongoose from 'mongoose';
 import { OrderSchema } from '../order/order.schema';
+import { ProductSchema } from '../product/product.schema';
+import { Store } from '../store/store.model';
+
+interface PreferencesAnalytics {
+  favoriteStores: Array<{
+    storeId: string;
+    storeName: string;
+    orderCount: number;
+    totalSpent: number;
+    lastOrderDate: Date;
+  }>;
+  categoryPreferences: Array<{
+    category: string;
+    orderCount: number;
+    totalSpent: number;
+  }>;
+  deliveryPreferences: {
+    commonAddresses: Array<{
+      address: string;
+      useCount: number;
+    }>;
+    expressDeliveryRate: number;
+    preferredPackageSizes: Array<{
+      size: string;
+      count: number;
+    }>;
+  };
+  productPreferences: Array<{
+    productId: string;
+    productName: string;
+    orderCount: number;
+    lastOrdered: Date;
+  }>;
+}
+
+interface AnalyticsOverview {
+  totalOrders: number;
+  totalSpent: number;
+  favoriteStore: {
+    storeName: string;
+    orderCount: number;
+  };
+  mostOrderedProduct: {
+    productName: string;
+    orderCount: number;
+  };
+  recentActivity: {
+    lastOrderDate: Date;
+    orderFrequency: string;
+  };
+}
 
 export class ConsumerCrud {
   async createConsumer(consumerData: Partial<IConsumerBase>): Promise<IConsumerDocument> {
@@ -275,5 +326,305 @@ export class ConsumerCrud {
     } catch (error) {
       throw error;
     }
+  }
+
+  async getPreferencesAnalytics(consumerId: string): Promise<PreferencesAnalytics> {
+    try {
+      const [
+        storePreferences,
+        categoryPreferences,
+        deliveryStats,
+        productPreferences
+      ] = await Promise.all([
+        this.getFavoriteStores(consumerId),
+        this.getCategoryPreferences(consumerId),
+        this.getDeliveryPreferences(consumerId),
+        this.getProductPreferences(consumerId)
+      ]);
+
+      return {
+        favoriteStores: storePreferences,
+        categoryPreferences,
+        deliveryPreferences: deliveryStats,
+        productPreferences
+      };
+    } catch (error) {
+      console.error('Get preferences analytics error:', error);
+      throw error;
+    }
+  }
+
+  async getAnalyticsOverview(consumerId: string): Promise<AnalyticsOverview> {
+    try {
+      const overview = await OrderSchema.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(consumerId)
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            totalSpent: { $sum: '$price' },
+            lastOrderDate: { $max: '$createdAt' },
+            firstOrderDate: { $min: '$createdAt' }
+          }
+        }
+      ]);
+
+      const favoriteStore = await this.getTopStore(consumerId);
+      const topProduct = await this.getTopProduct(consumerId);
+
+      const stats = overview[0] || {
+        totalOrders: 0,
+        totalSpent: 0,
+        lastOrderDate: null,
+        firstOrderDate: null
+      };
+
+      return {
+        totalOrders: stats.totalOrders,
+        totalSpent: stats.totalSpent,
+        favoriteStore: {
+          storeName: favoriteStore?.storeName || 'N/A',
+          orderCount: favoriteStore?.orderCount || 0
+        },
+        mostOrderedProduct: {
+          productName: topProduct?.productName || 'N/A',
+          orderCount: topProduct?.orderCount || 0
+        },
+        recentActivity: {
+          lastOrderDate: stats.lastOrderDate,
+          orderFrequency: this.calculateOrderFrequency(
+            stats.totalOrders,
+            stats.firstOrderDate,
+            stats.lastOrderDate
+          )
+        }
+      };
+    } catch (error) {
+      console.error('Get analytics overview error:', error);
+      throw error;
+    }
+  }
+
+  private async getFavoriteStores(consumerId: string) {
+    return await OrderSchema.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(consumerId)
+        }
+      },
+      {
+        $unwind: '$items'
+      },
+      {
+        $group: {
+          _id: '$items.storeId',
+          orderCount: { $sum: 1 },
+          totalSpent: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+          lastOrderDate: { $max: '$createdAt' }
+        }
+      },
+      {
+        $lookup: {
+          from: 'stores',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'storeInfo'
+        }
+      },
+      {
+        $project: {
+          storeId: '$_id',
+          storeName: { $arrayElemAt: ['$storeInfo.name', 0] },
+          orderCount: 1,
+          totalSpent: 1,
+          lastOrderDate: 1
+        }
+      },
+      {
+        $sort: { orderCount: -1 }
+      },
+      {
+        $limit: 5
+      }
+    ]);
+  }
+
+  private async getCategoryPreferences(consumerId: string) {
+    return await OrderSchema.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(consumerId)
+        }
+      },
+      {
+        $unwind: '$items'
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      {
+        $group: {
+          _id: { $arrayElemAt: ['$productInfo.category', 0] },
+          orderCount: { $sum: 1 },
+          totalSpent: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+        }
+      },
+      {
+        $project: {
+          category: '$_id',
+          orderCount: 1,
+          totalSpent: 1,
+          _id: 0
+        }
+      },
+      {
+        $sort: { orderCount: -1 }
+      }
+    ]);
+  }
+
+  private async getDeliveryPreferences(consumerId: string) {
+    const deliveryStats = await OrderSchema.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(consumerId)
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          expressDeliveries: {
+            $sum: { $cond: ['$isExpressDelivery', 1, 0] }
+          },
+          addresses: {
+            $push: {
+              address: '$deliveryAddress.street',
+              city: '$deliveryAddress.city'
+            }
+          },
+          packageSizes: { $push: '$packageSize' }
+        }
+      }
+    ]);
+
+    const stats = deliveryStats[0] || {
+      totalOrders: 0,
+      expressDeliveries: 0,
+      addresses: [],
+      packageSizes: []
+    };
+
+    // Process addresses
+    const addressCounts = stats.addresses.reduce((acc: any, curr: any) => {
+      const fullAddress = `${curr.address}, ${curr.city}`;
+      acc[fullAddress] = (acc[fullAddress] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Process package sizes
+    const packageSizeCounts = stats.packageSizes.reduce((acc: any, curr: string) => {
+      acc[curr] = (acc[curr] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      commonAddresses: Object.entries(addressCounts)
+        .map(([address, count]) => ({ address, useCount: count as number }))
+        .sort((a, b) => b.useCount - a.useCount)
+        .slice(0, 3),
+      expressDeliveryRate: stats.totalOrders ? 
+        (stats.expressDeliveries / stats.totalOrders) * 100 : 0,
+      preferredPackageSizes: Object.entries(packageSizeCounts)
+        .map(([size, count]) => ({ size, count: count as number }))
+        .sort((a, b) => b.count - a.count)
+    };
+  }
+
+  private async getProductPreferences(consumerId: string) {
+    return await OrderSchema.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(consumerId)
+        }
+      },
+      {
+        $unwind: '$items'
+      },
+      {
+        $group: {
+          _id: '$items.productId',
+          orderCount: { $sum: 1 },
+          lastOrdered: { $max: '$createdAt' }
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      {
+        $project: {
+          productId: '$_id',
+          productName: { $arrayElemAt: ['$productInfo.name', 0] },
+          orderCount: 1,
+          lastOrdered: 1
+        }
+      },
+      {
+        $sort: { orderCount: -1 }
+      },
+      {
+        $limit: 10
+      }
+    ]);
+  }
+
+  private calculateOrderFrequency(
+    totalOrders: number,
+    firstOrderDate: Date,
+    lastOrderDate: Date
+  ): string {
+    if (!firstOrderDate || !lastOrderDate) return 'N/A';
+
+    const daysDiff = Math.ceil(
+      (lastOrderDate.getTime() - firstOrderDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysDiff === 0) return 'First order today';
+
+    const ordersPerDay = totalOrders / daysDiff;
+    const ordersPerWeek = ordersPerDay * 7;
+    const ordersPerMonth = ordersPerDay * 30;
+
+    if (ordersPerMonth < 1) {
+      return `${ordersPerMonth.toFixed(1)} orders per month`;
+    } else if (ordersPerWeek < 1) {
+      return `${ordersPerWeek.toFixed(1)} orders per week`;
+    } else {
+      return `${ordersPerDay.toFixed(1)} orders per day`;
+    }
+  }
+
+  private async getTopStore(consumerId: string) {
+    const stores = await this.getFavoriteStores(consumerId);
+    return stores[0];
+  }
+
+  private async getTopProduct(consumerId: string) {
+    const products = await this.getProductPreferences(consumerId);
+    return products[0];
   }
 }

@@ -11,16 +11,30 @@ import { Store } from '../store/store.model';
 import { ConsumerSchema } from './consumer.schema';
 import { OrderCrud } from '../order/order.crud';
 import { StoreCrud } from '../store/store.crud';
+import { ProductCrud } from '../product/product.crud';
+import mongoose from 'mongoose';
+
+// Update the interface to match middleware requirements
+interface AuthenticatedRequest extends Request {
+  consumer: {
+    consumerId: string;
+    email: string;
+    type: 'consumer';
+    _id: mongoose.Types.ObjectId;
+  };
+}
 
 export class ConsumerController {
   private consumerCrud: ConsumerCrud;
   private orderCrud: OrderCrud;
   private storeCrud: StoreCrud;
+  private productCrud: ProductCrud;
 
   constructor() {
     this.consumerCrud = new ConsumerCrud();
     this.orderCrud = new OrderCrud();
     this.storeCrud = new StoreCrud();
+    this.productCrud = new ProductCrud();
   }
 
   register = async (
@@ -610,6 +624,92 @@ export class ConsumerController {
       res.status(500).json({
         success: false,
         message: 'Failed to get store pickup address'
+      });
+    }
+  };
+
+  // New analytics methods
+  public getAnalyticsOverview = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const consumerId = req.consumer.consumerId;
+      const analytics = await this.consumerCrud.getAnalyticsOverview(consumerId);
+
+      res.status(200).json({
+        success: true,
+        data: analytics
+      });
+    } catch (error) {
+      console.error('Analytics overview error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch analytics overview'
+      });
+    }
+  };
+
+  public getOrderAnalytics = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const consumerId = req.consumer.consumerId;
+      const { timeframe = 'all' } = req.query;
+
+      const orderAnalytics = await this.orderCrud.getConsumerOrderAnalytics(
+        consumerId,
+        timeframe as string
+      );
+
+      res.status(200).json({
+        success: true,
+        data: orderAnalytics
+      });
+    } catch (error) {
+      console.error('Order analytics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch order analytics'
+      });
+    }
+  };
+
+  public getSpendingAnalytics = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const consumerId = req.consumer.consumerId;
+      const { period = '6months' } = req.query;
+
+      const spendingAnalytics = await this.orderCrud.getConsumerSpendingAnalytics(
+        consumerId,
+        period as string
+      );
+
+      res.status(200).json({
+        success: true,
+        data: spendingAnalytics
+      });
+    } catch (error) {
+      console.error('Spending analytics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch spending analytics'
+      });
+    }
+  };
+
+  public getPreferencesAnalytics = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const consumerId = req.consumer.consumerId;
+
+      const preferencesAnalytics = await this.consumerCrud.getPreferencesAnalytics(
+        consumerId
+      );
+
+      res.status(200).json({
+        success: true,
+        data: preferencesAnalytics
+      });
+    } catch (error) {
+      console.error('Preferences analytics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch preferences analytics'
       });
     }
   };

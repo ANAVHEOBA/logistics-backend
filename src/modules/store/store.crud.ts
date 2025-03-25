@@ -275,17 +275,27 @@ export class StoreCrud {
         { $unwind: '$items' },
         { $match: { 'items.storeId': new mongoose.Types.ObjectId(storeId) } },
         {
+          $lookup: {
+            from: 'stores',
+            localField: 'items.storeId',
+            foreignField: '_id',
+            as: 'storeDetails'
+          }
+        },
+        {
           $group: {
             _id: '$_id',
             orderId: { $first: '$_id' },
             trackingNumber: { $first: '$trackingNumber' },
             status: { $first: '$status' },
             paymentStatus: { $first: '$paymentStatus' },
+            paymentMethod: { $first: '$paymentMethod' },
             createdAt: { $first: '$createdAt' },
             items: { $push: '$items' },
             pickupAddress: { $first: '$pickupAddress' },
             deliveryAddress: { $first: '$deliveryAddress' },
-            specialInstructions: { $first: '$specialInstructions' }
+            specialInstructions: { $first: '$specialInstructions' },
+            storeName: { $first: { $arrayElemAt: ['$storeDetails.storeName', 0] } }
           }
         }
       ]),
