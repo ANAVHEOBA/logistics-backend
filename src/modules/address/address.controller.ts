@@ -140,4 +140,33 @@ export class AddressController {
       });
     }
   };
+
+  getStoreAddress = async (
+    req: Request<{ storeId: string }>,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+      
+      const address = await this.addressCrud.findStoreAddress(storeId);
+      if (!address) {
+        res.status(404).json({
+          success: false,
+          message: 'Store address not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: address
+      });
+    } catch (error) {
+      console.error('Get store address error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store address'
+      });
+    }
+  };
 }

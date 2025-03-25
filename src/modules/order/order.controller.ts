@@ -463,7 +463,7 @@ export class OrderController {
 
   public async getConsumerOrderById(req: Request, res: Response): Promise<void> {
     try {
-      const consumerId = req.user!.userId;
+      const consumerId = req.consumer!.consumerId;
       const { orderId } = req.params;
 
       const order = await this.orderCrud.findConsumerOrderById(orderId, consumerId);
@@ -475,9 +475,28 @@ export class OrderController {
         return;
       }
 
+      // Calculate subtotal (product total) and delivery fee
+      const productTotal = order.items.reduce((total: number, item: IOrderItemResponse) => {
+        return total + (item.price * item.quantity);
+      }, 0);
+
+      const deliveryFee = order.zonePrice || 0;
+      const totalPrice = productTotal + deliveryFee;
+
       res.status(200).json({
         success: true,
-        data: order
+        data: {
+          ...order,
+          paymentInstructions: {
+            reference: order.paymentReference,
+            bankDetails: order.bankAccountDetails,
+            amount: totalPrice,
+            deliveryFee: deliveryFee,
+            subtotal: productTotal,
+            currency: 'NGN',
+            instructions: "Please transfer the exact amount in Naira and use your payment reference as the transaction description."
+          }
+        }
       });
     } catch (error) {
       console.error('Get consumer order error:', error);

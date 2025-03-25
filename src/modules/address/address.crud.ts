@@ -64,6 +64,26 @@ export class AddressCrud {
     }
   }
 
+  async findStoreAddress(storeId: string): Promise<IAddress | null> {
+    try {
+      // First get the store to find its userId
+      const store = await mongoose.model('Store').findById(storeId).exec();
+      if (!store) {
+        return null;
+      }
+
+      // Then find the store's address using the userId
+      const address = await AddressSchema.findOne({ 
+        userId: store.userId,
+        label: 'Store Address'
+      }).exec();
+      
+      return address ? this.toAddressResponse(address) : null;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   private toAddressResponse(address: IAddressDocument): IAddress {
     const addressObject = address.toObject();
     return {
