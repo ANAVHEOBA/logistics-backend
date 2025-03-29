@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import { Product } from './product.model';
 import { FilterQuery } from 'mongoose';
 import { IProduct } from './product.model';
+import { uploadService } from '../../services/upload.service';
 
 interface AuthUser {
   userId: string;
@@ -20,6 +21,7 @@ interface AuthRequest extends Request {
     email: string;
     _id: mongoose.Types.ObjectId;
   };
+  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
 }
 
 export class ProductController {
@@ -51,10 +53,23 @@ export class ProductController {
         return;
       }
 
+      // Handle image uploads
+      const uploadedImages: { url: string; publicId: string }[] = [];
+      const files = Array.isArray(req.files) ? req.files : Object.values(req.files || {}).flat();
+      
+      if (files.length) {
+        const results = await uploadService.uploadMultipleImages(files);
+        uploadedImages.push(...results.map(img => ({
+          url: img.secure_url,
+          publicId: img.public_id
+        })));
+      }
+
       const productData = {
         ...req.body,
         storeId: store._id,
-        status: ProductStatus.ACTIVE
+        status: ProductStatus.ACTIVE,
+        images: uploadedImages
       };
 
       const product = await this.productCrud.createProduct(productData);
@@ -124,6 +139,7 @@ export class ProductController {
     try {
       const { productId } = req.params;
       const userId = req.user?.userId;
+      
       if (!userId) {
         res.status(401).json({
           success: false,
@@ -132,17 +148,8 @@ export class ProductController {
         return;
       }
 
-      const store = await this.storeCrud.findByUserId(userId) as IStore;
-      if (!store) {
-        res.status(404).json({
-          success: false,
-          message: 'Store not found'
-        });
-        return;
-      }
-
       const product = await this.productCrud.getProductById(productId);
-      if (!product || product.storeId.toString() !== store._id.toString()) {
+      if (!product) {
         res.status(404).json({
           success: false,
           message: 'Product not found'
@@ -150,10 +157,24 @@ export class ProductController {
         return;
       }
 
-      const updatedProduct = await this.productCrud.updateProduct(
-        productId,
-        req.body
-      );
+      // Handle new image uploads
+      let updatedImages = [...product.images];
+      const files = Array.isArray(req.files) ? req.files : Object.values(req.files || {}).flat();
+      
+      if (files.length) {
+        const results = await uploadService.uploadMultipleImages(files);
+        updatedImages.push(...results.map(img => ({
+          url: img.secure_url,
+          publicId: img.public_id
+        })));
+      }
+
+      const updateData = {
+        ...req.body,
+        images: updatedImages
+      };
+
+      const updatedProduct = await this.productCrud.updateProduct(productId, updateData);
 
       res.status(200).json({
         success: true,
@@ -396,6 +417,74 @@ export class ProductController {
       res.status(500).json({
         success: false,
         message: 'Failed to validate order quantity'
+      });
+    }
+  };
+
+  uploadImages = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      if (!req.files || !Array.isArray(req.files)) {
+        res.status(400).json({
+          success: false,
+          message: 'No images uploaded'
+        });
+        return;
+      }
+
+      const uploadedImages = await uploadService.uploadMultipleImages(req.files);
+      
+      res.status(200).json({
+        success: true,
+        data: uploadedImages.map(img => ({
+          url: img.secure_url,
+          publicId: img.public_id
+        }))
+      });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload images'
+      });
+    }
+  };
+
+  deleteImage = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { productId, imageId } = req.params;
+      const product = await this.productCrud.getProductById(productId);
+      
+      if (!product) {
+        res.status(404).json({
+          success: false,
+          message: 'Product not found'
+        });
+        return;
+      }
+
+      const image = product.images.find(img => img.publicId === imageId);
+      if (!image) {
+        res.status(404).json({
+          success: false,
+          message: 'Image not found'
+        });
+        return;
+      }
+
+      await uploadService.deleteImage(image.publicId);
+      await this.productCrud.updateProduct(productId, {
+        images: product.images.filter(img => img.publicId !== imageId)
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Image deleted successfully'
+      });
+    } catch (error) {
+      console.error('Delete image error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete image'
       });
     }
   };

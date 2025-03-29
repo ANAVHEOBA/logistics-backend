@@ -32,5 +32,11 @@ export const config = {
       accountNumber: process.env.BANK_ACCOUNT_NUMBER || '0123456789',
       bankName: process.env.BANK_NAME || 'Default Bank'
     }
+  },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+    folder: process.env.CLOUDINARY_FOLDER || 'products'
   }
 };

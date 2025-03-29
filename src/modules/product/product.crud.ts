@@ -1,6 +1,7 @@
 import { Product, IProduct, ProductStatus } from './product.model';
 import { FilterQuery } from 'mongoose';
 import mongoose from 'mongoose';
+import { uploadService } from '../../services/upload.service';
 
 export class ProductCrud {
   async createProduct(productData: Partial<IProduct>): Promise<IProduct> {
@@ -64,6 +65,14 @@ export class ProductCrud {
   }
 
   async deleteProduct(productId: string): Promise<boolean> {
+    const product = await Product.findById(productId);
+    if (product) {
+      // Delete images from Cloudinary
+      const deletePromises = product.images.map(img => 
+        uploadService.deleteImage(img.publicId)
+      );
+      await Promise.all(deletePromises);
+    }
     const result = await Product.deleteOne({ _id: productId });
     return result.deletedCount === 1;
   }

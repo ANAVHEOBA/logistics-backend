@@ -1,12 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 
+const productImageSchema = Joi.object({
+  url: Joi.string().uri().required(),
+  publicId: Joi.string().required()
+});
+
 const createProductSchema = Joi.object({
   name: Joi.string().required().min(3).max(100),
   description: Joi.string().required().min(10).max(1000),
   price: Joi.number().required().min(0),
   category: Joi.string().required(),
-  images: Joi.array().items(Joi.string().uri()).min(1).required(),
+  images: Joi.array().items(productImageSchema).min(1).required(),
   stock: Joi.number().integer().min(0).required(),
   specifications: Joi.object().pattern(
     Joi.string(),
@@ -39,7 +44,7 @@ const updateProductSchema = Joi.object({
   description: Joi.string().min(10).max(1000),
   price: Joi.number().min(0),
   category: Joi.string(),
-  images: Joi.array().items(Joi.string().uri()).min(1),
+  images: Joi.array().items(productImageSchema),
   stock: Joi.number().integer().min(0),
   specifications: Joi.object().pattern(
     Joi.string(),

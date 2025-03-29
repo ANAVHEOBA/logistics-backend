@@ -1,12 +1,17 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+interface IProductImage {
+  url: string;
+  publicId: string;
+}
+
 export interface IProduct extends Document {
   storeId: mongoose.Types.ObjectId;
   name: string;
   description: string;
   price: number;
   category: string;
-  images: string[];
+  images: IProductImage[];
   stock: number;
   specifications?: {
     [key: string]: string;
@@ -65,8 +70,14 @@ const productSchema = new Schema({
     required: true
   },
   images: [{
-    type: String,
-    required: true
+    url: {
+      type: String,
+      required: true
+    },
+    publicId: {
+      type: String,
+      required: true
+    }
   }],
   stock: {
     type: Number,
