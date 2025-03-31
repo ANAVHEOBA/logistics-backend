@@ -19,7 +19,7 @@ const corsOptions = {
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',//   // React development server
-    'https://your-frontend-domain.com', // Add your production frontend domain
+    'https://www.gofroma2zafrica.com',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
