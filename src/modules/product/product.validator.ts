@@ -11,7 +11,6 @@ const createProductSchema = Joi.object({
   description: Joi.string().required().min(10).max(1000),
   price: Joi.number().required().min(0),
   category: Joi.string().required(),
-  images: Joi.array().items(productImageSchema).min(1).required(),
   stock: Joi.number().integer().min(0).required(),
   specifications: Joi.object().pattern(
     Joi.string(),
@@ -37,7 +36,7 @@ const createProductSchema = Joi.object({
     }),
     requiresSpecialHandling: Joi.boolean()
   })
-});
+}).unknown(true);
 
 const updateProductSchema = Joi.object({
   name: Joi.string().min(3).max(100),
@@ -66,6 +65,15 @@ export const validateProduct = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Check if files exist
+    if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
+      res.status(400).json({
+        success: false,
+        message: 'At least one image is required'
+      });
+      return;
+    }
+
     const schema = req.method === 'POST' ? createProductSchema : updateProductSchema;
     await schema.validateAsync(req.body, { abortEarly: false });
     next();

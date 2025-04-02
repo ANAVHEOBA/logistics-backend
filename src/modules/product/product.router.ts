@@ -33,8 +33,8 @@ router.post(
   '/create',
   authMiddleware,
   upload.array('images', 5),
-  validateProduct,
-  productController.createProduct as express.RequestHandler
+  productController.createProduct as express.RequestHandler,
+  validateProduct
 );
 
 router.get(

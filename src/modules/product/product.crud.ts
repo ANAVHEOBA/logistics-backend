@@ -5,6 +5,11 @@ import { uploadService } from '../../services/upload.service';
 
 export class ProductCrud {
   async createProduct(productData: Partial<IProduct>): Promise<IProduct> {
+    // Convert Map to plain object if it's a Map
+    if (productData.specifications instanceof Map) {
+      productData.specifications = Object.fromEntries(productData.specifications);
+    }
+    
     const product = new Product(productData);
     return await product.save();
   }

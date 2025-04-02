@@ -65,11 +65,17 @@ export class ProductController {
         })));
       }
 
+      // Convert specifications object to Map
+      const specifications = new Map(
+        Object.entries(req.body.specifications || {})
+      );
+
       const productData = {
         ...req.body,
         storeId: store._id,
         status: ProductStatus.ACTIVE,
-        images: uploadedImages
+        images: uploadedImages,
+        specifications // Use the converted Map
       };
 
       const product = await this.productCrud.createProduct(productData);
