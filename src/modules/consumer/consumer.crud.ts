@@ -355,65 +355,59 @@ export class ConsumerCrud {
   }
 
   async getAnalyticsOverview(consumerId: string): Promise<AnalyticsOverview> {
-    try {
-      const overview = await OrderSchema.aggregate([
-        {
-          $match: {
-            userId: new mongoose.Types.ObjectId(consumerId)
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            totalOrders: { $sum: 1 },
-            totalSpent: { $sum: '$price' },
-            lastOrderDate: { $max: '$createdAt' },
-            firstOrderDate: { $min: '$createdAt' }
-          }
+    const orders = await OrderSchema.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(consumerId),
+          status: 'CONFIRMED'  // Changed from paymentStatus: 'VERIFIED'
         }
-      ]);
-
-      const favoriteStore = await this.getTopStore(consumerId);
-      const topProduct = await this.getTopProduct(consumerId);
-
-      const stats = overview[0] || {
-        totalOrders: 0,
-        totalSpent: 0,
-        lastOrderDate: null,
-        firstOrderDate: null
-      };
-
-      return {
-        totalOrders: stats.totalOrders,
-        totalSpent: stats.totalSpent,
-        favoriteStore: {
-          storeName: favoriteStore?.storeName || 'N/A',
-          orderCount: favoriteStore?.orderCount || 0
-        },
-        mostOrderedProduct: {
-          productName: topProduct?.productName || 'N/A',
-          orderCount: topProduct?.orderCount || 0
-        },
-        recentActivity: {
-          lastOrderDate: stats.lastOrderDate,
-          orderFrequency: this.calculateOrderFrequency(
-            stats.totalOrders,
-            stats.firstOrderDate,
-            stats.lastOrderDate
-          )
+      },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalSpent: { $sum: '$price' },
+          lastOrderDate: { $max: '$createdAt' }
         }
-      };
-    } catch (error) {
-      console.error('Get analytics overview error:', error);
-      throw error;
-    }
+      }
+    ]);
+
+    const favoriteStore = await this.getTopStore(consumerId);
+    const topProduct = await this.getTopProduct(consumerId);
+
+    const stats = orders[0] || {
+      totalOrders: 0,
+      totalSpent: 0,
+      lastOrderDate: null
+    };
+
+    return {
+      totalOrders: stats.totalOrders,
+      totalSpent: stats.totalSpent,
+      favoriteStore: {
+        storeName: favoriteStore?.storeName || 'N/A',
+        orderCount: favoriteStore?.orderCount || 0
+      },
+      mostOrderedProduct: {
+        productName: topProduct?.productName || 'N/A',
+        orderCount: topProduct?.orderCount || 0
+      },
+      recentActivity: {
+        lastOrderDate: stats.lastOrderDate,
+        orderFrequency: this.calculateOrderFrequency(
+          stats.totalOrders,
+          stats.lastOrderDate
+        )
+      }
+    };
   }
 
   private async getFavoriteStores(consumerId: string) {
     return await OrderSchema.aggregate([
       {
         $match: {
-          userId: new mongoose.Types.ObjectId(consumerId)
+          userId: new mongoose.Types.ObjectId(consumerId),
+          status: 'CONFIRMED'  // Changed from paymentStatus: 'VERIFIED'
         }
       },
       {
@@ -496,7 +490,8 @@ export class ConsumerCrud {
     const deliveryStats = await OrderSchema.aggregate([
       {
         $match: {
-          userId: new mongoose.Types.ObjectId(consumerId)
+          userId: new mongoose.Types.ObjectId(consumerId),
+          status: 'CONFIRMED'  // Changed from paymentStatus: 'VERIFIED'
         }
       },
       {
@@ -554,7 +549,8 @@ export class ConsumerCrud {
     return await OrderSchema.aggregate([
       {
         $match: {
-          userId: new mongoose.Types.ObjectId(consumerId)
+          userId: new mongoose.Types.ObjectId(consumerId),
+          status: 'CONFIRMED'  // Changed from paymentStatus: 'VERIFIED'
         }
       },
       {
@@ -594,13 +590,12 @@ export class ConsumerCrud {
 
   private calculateOrderFrequency(
     totalOrders: number,
-    firstOrderDate: Date,
     lastOrderDate: Date
   ): string {
-    if (!firstOrderDate || !lastOrderDate) return 'N/A';
+    if (!lastOrderDate) return 'N/A';
 
     const daysDiff = Math.ceil(
-      (lastOrderDate.getTime() - firstOrderDate.getTime()) / (1000 * 60 * 60 * 24)
+      (new Date().getTime() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24)
     );
 
     if (daysDiff === 0) return 'First order today';

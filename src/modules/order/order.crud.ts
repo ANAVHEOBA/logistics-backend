@@ -748,100 +748,96 @@ export class OrderCrud {
     consumerId: string,
     timeframe: string
   ): Promise<OrderAnalytics> {
-    try {
-      const dateFilter = this.getTimeframeFilter(timeframe);
-      const query = {
-        userId: new mongoose.Types.ObjectId(consumerId),
-        createdAt: dateFilter
-      };
+    const timeFilter = this.getTimeframeFilter(timeframe);
+    const match = {
+      userId: new mongoose.Types.ObjectId(consumerId),
+      status: 'CONFIRMED',  // Changed from paymentStatus: 'VERIFIED'
+      createdAt: timeFilter
+    };
 
-      const [orderStats, deliveryStats] = await Promise.all([
-        this.model.aggregate([
-          { $match: query },
-          {
-            $lookup: {
-              from: 'stores',
-              localField: 'items.storeId',
-              foreignField: '_id',
-              as: 'storeDetails'
-            }
-          },
-          {
-            $group: {
-              _id: null,
-              totalOrders: { $sum: 1 },
-              totalAmount: { $sum: '$price' },
-              packageSizes: { $push: '$packageSize' },
-              expressDeliveryCount: {
-                $sum: { $cond: ['$isExpressDelivery', 1, 0] }
-              },
-              storeName: { $first: { $arrayElemAt: ['$storeDetails.storeName', 0] } }
-            }
+    const [orderStats, deliveryStats] = await Promise.all([
+      this.model.aggregate([
+        { $match: match },
+        {
+          $lookup: {
+            from: 'stores',
+            localField: 'items.storeId',
+            foreignField: '_id',
+            as: 'storeDetails'
           }
-        ]),
-        this.model.aggregate([
-          { $match: { ...query, status: 'DELIVERED' } },
-          {
-            $group: {
-              _id: null,
-              deliveredCount: { $sum: 1 },
-              avgDeliveryTime: {
-                $avg: {
-                  $subtract: ['$deliveryDate', '$createdAt']
-                }
+        },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$price' },
+            packageSizes: { $push: '$packageSize' },
+            expressDeliveryCount: {
+              $sum: { $cond: ['$isExpressDelivery', 1, 0] }
+            },
+            storeName: { $first: { $arrayElemAt: ['$storeDetails.storeName', 0] } }
+          }
+        }
+      ]),
+      this.model.aggregate([
+        { $match: { ...match, status: 'DELIVERED' } },
+        {
+          $group: {
+            _id: null,
+            deliveredCount: { $sum: 1 },
+            avgDeliveryTime: {
+              $avg: {
+                $subtract: ['$deliveryDate', '$createdAt']
               }
             }
           }
-        ])
-      ]);
-
-      const orderStatusCounts = await this.model.aggregate([
-        { $match: query },
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 }
-          }
         }
-      ]);
+      ])
+    ]);
 
-      const stats = orderStats[0] || { 
-        totalOrders: 0, 
-        totalAmount: 0,
-        packageSizes: [],
-        expressDeliveryCount: 0
-      };
+    const orderStatusCounts = await this.model.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
 
-      const deliveryMetrics = deliveryStats[0] || {
-        deliveredCount: 0,
-        avgDeliveryTime: 0
-      };
+    const stats = orderStats[0] || { 
+      totalOrders: 0, 
+      totalAmount: 0,
+      packageSizes: [],
+      expressDeliveryCount: 0
+    };
 
-      const packageSizeDistribution = stats.packageSizes.reduce((acc: any, size: PackageSize) => {
-        acc[size] = (acc[size] || 0) + 1;
+    const deliveryMetrics = deliveryStats[0] || {
+      deliveredCount: 0,
+      avgDeliveryTime: 0
+    };
+
+    const packageSizeDistribution = stats.packageSizes.reduce((acc: any, size: PackageSize) => {
+      acc[size] = (acc[size] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      totalOrders: stats.totalOrders,
+      ordersByStatus: orderStatusCounts.reduce((acc: any, curr) => {
+        acc[curr._id] = curr.count;
         return acc;
-      }, {});
-
-      return {
-        totalOrders: stats.totalOrders,
-        ordersByStatus: orderStatusCounts.reduce((acc: any, curr) => {
-          acc[curr._id] = curr.count;
-          return acc;
-        }, {}),
-        averageOrderValue: stats.totalOrders ? stats.totalAmount / stats.totalOrders : 0,
-        orderFrequency: this.calculateOrderFrequency(stats.totalOrders, timeframe),
-        packageSizeDistribution,
-        deliveryMetrics: {
-          successRate: stats.totalOrders ? 
-            (deliveryMetrics.deliveredCount / stats.totalOrders) * 100 : 0,
-          averageDeliveryTime: deliveryMetrics.avgDeliveryTime / (1000 * 60 * 60 * 24), // Convert to days
-          expressDeliveryCount: stats.expressDeliveryCount
-        }
-      };
-    } catch (error) {
-      console.error('Get consumer order analytics error:', error);
-      throw error;
-    }
+      }, {}),
+      averageOrderValue: stats.totalOrders ? stats.totalAmount / stats.totalOrders : 0,
+      orderFrequency: this.calculateOrderFrequency(stats.totalOrders, timeframe),
+      packageSizeDistribution,
+      deliveryMetrics: {
+        successRate: stats.totalOrders ? 
+          (deliveryMetrics.deliveredCount / stats.totalOrders) * 100 : 0,
+        averageDeliveryTime: deliveryMetrics.avgDeliveryTime / (1000 * 60 * 60 * 24), // Convert to days
+        expressDeliveryCount: stats.expressDeliveryCount
+      }
+    };
   }
 
   async getConsumerSpendingAnalytics(
@@ -857,6 +853,7 @@ export class OrderCrud {
         {
           $match: {
             userId: new mongoose.Types.ObjectId(consumerId),
+            status: 'CONFIRMED',  // Changed from paymentStatus: 'VERIFIED'
             createdAt: { $gte: startDate }
           }
         },
@@ -879,6 +876,7 @@ export class OrderCrud {
         {
           $match: {
             userId: new mongoose.Types.ObjectId(consumerId),
+            status: 'CONFIRMED',  // Changed from paymentStatus: 'VERIFIED'
             createdAt: { $gte: startDate }
           }
         },
