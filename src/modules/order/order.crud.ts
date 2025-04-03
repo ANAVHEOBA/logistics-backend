@@ -9,7 +9,8 @@ import {
   IConsumerOrderRequest,
   PaymentStatus,
   PaymentMethod,
-  PackageSize
+  PackageSize,
+  IConsumerOrdersQuery
 } from './order.model';
 import { OrderItem } from '../orderItem/orderItem.schema';
 import mongoose, { Model } from 'mongoose';
@@ -536,23 +537,42 @@ export class OrderCrud {
   }
 
   async findConsumerOrders(
-    consumerId: string, 
-    page: number = 1, 
-    limit: number = 10
+    consumerId: string,
+    query: IConsumerOrdersQuery = {}
   ): Promise<{ orders: IOrder[]; total: number }> {
     try {
+      const page = query.page || 1;
+      const limit = query.limit || 10;
       const skip = (page - 1) * limit;
-      const query = { userId: consumerId };
+
+      // Build the filter object
+      const filter: any = { userId: consumerId };
+      
+      // Add status filter if provided
+      if (query.status) {
+        filter.status = query.status;
+      }
+
+      // Add date range filter if provided
+      if (query.startDate || query.endDate) {
+        filter.createdAt = {};
+        if (query.startDate) {
+          filter.createdAt.$gte = query.startDate;
+        }
+        if (query.endDate) {
+          filter.createdAt.$lte = query.endDate;
+        }
+      }
 
       const [orders, total] = await Promise.all([
-        OrderSchema.find(query)
+        OrderSchema.find(filter)
           .populate('pickupAddress')
           .populate('deliveryAddress')
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limit)
           .exec(),
-        OrderSchema.countDocuments(query)
+        OrderSchema.countDocuments(filter)
       ]);
 
       return {

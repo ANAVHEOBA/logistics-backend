@@ -15,6 +15,7 @@ import { ZoneCrud } from '../zone/zone.crud';
 import { config } from '../../config/environment';
 import { generatePaymentReference } from '../../utils/payment.helper';
 import { AdminCrud } from '../admin/admin.crud';
+import { IConsumerOrdersQuery } from './order.model';
 
 export class OrderController {
   private orderCrud: OrderCrud;
@@ -497,11 +498,25 @@ export class OrderController {
   public async getConsumerOrders(req: Request, res: Response): Promise<void> {
     try {
       const consumerId = req.consumer!.consumerId;
-      const orders = await this.orderCrud.findConsumerOrders(consumerId);
+      const query: IConsumerOrdersQuery = {
+        page: Number(req.query.page) || 1,
+        limit: Number(req.query.limit) || 10,
+        status: req.query.status as OrderStatus,
+        startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
+        endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined
+      };
+
+      const { orders, total } = await this.orderCrud.findConsumerOrders(consumerId, query);
 
       res.status(200).json({
         success: true,
-        data: orders
+        data: {
+          orders,
+          total,
+          page: query.page,
+          limit: query.limit,
+          totalPages: Math.ceil(total / query.limit!)
+        }
       });
     } catch (error) {
       console.error('Get consumer orders error:', error);

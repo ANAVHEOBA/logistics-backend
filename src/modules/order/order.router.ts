@@ -3,7 +3,8 @@ import { OrderController } from './order.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
 import { authenticateConsumer } from '../../middleware/consumer.middleware';
 import { 
-  validateConsumerOrder, 
+  validateConsumerOrder,
+  validateConsumerOrdersQuery, 
   validateOrderStatusUpdate 
 } from './order.validator';
 
@@ -23,6 +24,7 @@ router.get(
   '/consumer/orders',
   authMiddleware,
   authenticateConsumer,
+  validateConsumerOrdersQuery,  
   (req: Request, res: Response) => orderController.getConsumerOrders(req, res)
 );
 

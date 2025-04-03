@@ -111,4 +111,43 @@ export const validateOrderStatusUpdate = async (
       });
     }
   }
+};
+
+export const consumerOrdersQuerySchema = Joi.object({
+  page: Joi.number().min(1).default(1),
+  limit: Joi.number().min(1).max(100).default(10),
+  status: Joi.string().valid(
+    'PENDING',
+    'CONFIRMED',
+    'READY_FOR_PICKUP',
+    'PICKED_UP',
+    'IN_TRANSIT',
+    'DELIVERED',
+    'CANCELLED',
+    'FAILED_DELIVERY'
+  ),
+  startDate: Joi.date(),
+  endDate: Joi.date().min(Joi.ref('startDate'))
+});
+
+export const validateConsumerOrdersQuery = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const validated = await consumerOrdersQuerySchema.validateAsync(req.query, {
+      stripUnknown: true
+    });
+    req.query = validated;
+    next();
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid query parameters',
+        errors: error.message
+      });
+    }
+  }
 }; 

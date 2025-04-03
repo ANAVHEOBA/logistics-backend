@@ -236,3 +236,12 @@ export interface IConsumerOrderRequest {
     bankName: string;
   };
 }
+
+// Add this interface with the existing interfaces
+export interface IConsumerOrdersQuery {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus;
+  startDate?: Date;
+  endDate?: Date;
+}
