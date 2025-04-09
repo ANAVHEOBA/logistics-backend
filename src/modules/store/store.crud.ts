@@ -6,7 +6,8 @@ import {
   PaginationOptions, 
   PaginatedResponse, 
   StoreOrder,
-  StoreCustomer
+  StoreCustomer,
+  RevenueOptions
 } from './store.types';
 import { OrderStatus } from '../order/order.model';
 
@@ -380,104 +381,81 @@ export class StoreCrud {
     );
   }
 
-  async getStoreRevenue(storeId: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  async getStoreRevenue(storeId: string, options?: RevenueOptions) {
+    try {
+      const matchStage: any = {
+        'items.storeId': new mongoose.Types.ObjectId(storeId),
+        status: { 
+          $in: [
+            'CONFIRMED',
+            'READY_FOR_PICKUP',
+            'PICKED_UP',
+            'IN_TRANSIT',
+            'DELIVERED'
+          ]
+        }
+      };
 
-    const aggregateRevenue = await OrderSchema.aggregate([
-      {
-        $match: {
-          'items.storeId': new mongoose.Types.ObjectId(storeId),
-          status: 'DELIVERED'  // Only check for DELIVERED status
+      // Add date filters if provided
+      if (options?.startDate || options?.endDate) {
+        matchStage.createdAt = {};
+        if (options.startDate) {
+          matchStage.createdAt.$gte = options.startDate;
         }
-      },
-      { $unwind: '$items' },
-      {
-        $match: {
-          'items.storeId': new mongoose.Types.ObjectId(storeId)
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { 
-            $sum: { $multiply: ['$items.price', '$items.quantity'] }
-          },
-          today: {
-            $sum: {
-              $cond: [
-                { $gte: ['$createdAt', today] },
-                { $multiply: ['$items.price', '$items.quantity'] },
-                0
-              ]
-            }
-          },
-          yesterday: {
-            $sum: {
-              $cond: [
-                { 
-                  $and: [
-                    { $gte: ['$createdAt', yesterday] },
-                    { $lt: ['$createdAt', today] }
-                  ]
-                },
-                { $multiply: ['$items.price', '$items.quantity'] },
-                0
-              ]
-            }
-          },
-          thisWeek: {
-            $sum: {
-              $cond: [
-                { $gte: ['$createdAt', startOfWeek] },
-                { $multiply: ['$items.price', '$items.quantity'] },
-                0
-              ]
-            }
-          },
-          thisMonth: {
-            $sum: {
-              $cond: [
-                { $gte: ['$createdAt', startOfMonth] },
-                { $multiply: ['$items.price', '$items.quantity'] },
-                0
-              ]
-            }
-          }
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          total: 1,
-          today: 1,
-          yesterday: 1,
-          thisWeek: 1,
-          thisMonth: 1,
-          // Calculate daily average
-          dailyAverage: {
-            $divide: ['$thisMonth', { $dayOfMonth: new Date() }]
-          }
+        if (options.endDate) {
+          matchStage.createdAt.$lte = options.endDate;
         }
       }
-    ]);
 
-    return aggregateRevenue[0] || {
-      total: 0,
-      today: 0,
-      yesterday: 0,
-      thisWeek: 0,
-      thisMonth: 0,
-      dailyAverage: 0
-    };
+      const result = await OrderSchema.aggregate([
+        { $match: matchStage },
+        { $unwind: '$items' },
+        {
+          $match: {
+            'items.storeId': new mongoose.Types.ObjectId(storeId)
+          }
+        },
+        {
+          $group: {
+            _id: {
+              date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+            },
+            dailyAmount: { 
+              $sum: { $multiply: ['$items.price', '$items.quantity'] }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$dailyAmount' },
+            dailyRevenue: {
+              $push: {
+                date: '$_id.date',
+                amount: '$dailyAmount'
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            totalRevenue: 1,
+            dailyRevenue: {
+              $sortArray: {
+                input: '$dailyRevenue',
+                sortBy: { date: 1 }
+              }
+            }
+          }
+        }
+      ]);
+
+      return result[0] || { totalRevenue: 0, dailyRevenue: [] };
+    } catch (error) {
+      console.error('Get store revenue error:', error);
+      throw error;
+    }
   }
 
   // Add a new method for detailed revenue analysis
@@ -529,45 +507,56 @@ export class StoreCrud {
   }
 
   async getProductPerformance(storeId: string) {
-    return await OrderSchema.aggregate([
-      {
-        $match: {
-          'items.storeId': new mongoose.Types.ObjectId(storeId),
-          status: { 
-            $nin: ['PENDING', 'CANCELLED', 'FAILED_DELIVERY'] // Only include orders that have been at least confirmed
-          },
-          paymentStatus: 'VERIFIED'
+    try {
+      const result = await OrderSchema.aggregate([
+        {
+          $match: {
+            'items.storeId': new mongoose.Types.ObjectId(storeId),
+            status: { 
+              $in: [
+                'CONFIRMED',
+                'READY_FOR_PICKUP',
+                'PICKED_UP',
+                'IN_TRANSIT',
+                'DELIVERED'
+              ]
+            }
+          }
+        },
+        { $unwind: '$items' },
+        {
+          $match: {
+            'items.storeId': new mongoose.Types.ObjectId(storeId)
+          }
+        },
+        {
+          $group: {
+            _id: '$items.productId',
+            name: { $first: '$items.name' },
+            totalOrders: { $sum: 1 },
+            totalQuantity: { $sum: '$items.quantity' },
+            totalRevenue: {
+              $sum: { $multiply: ['$items.price', '$items.quantity'] }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            productId: '$_id',
+            name: 1,
+            totalOrders: 1,
+            totalQuantity: 1,
+            totalRevenue: 1
+          }
         }
-      },
-      { $unwind: '$items' },
-      {
-        $group: {
-          _id: '$items.productId',
-          totalOrders: { $sum: 1 },
-          totalQuantity: { $sum: '$items.quantity' },
-          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
-        }
-      },
-      {
-        $lookup: {
-          from: 'products',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'product'
-        }
-      },
-      {
-        $project: {
-          productId: '$_id',
-          name: { $arrayElemAt: ['$product.name', 0] },
-          totalOrders: 1,
-          totalQuantity: 1,
-          totalRevenue: 1
-        }
-      },
-      { $sort: { totalRevenue: -1 } },
-      { $limit: 10 }
-    ]);
+      ]);
+
+      return result;
+    } catch (error) {
+      console.error('Get product performance error:', error);
+      throw error;
+    }
   }
 
   // Add a new method to validate order status transitions
@@ -699,5 +688,94 @@ export class StoreCrud {
       customers: aggregation,
       total: totalCount[0]?.total || 0
     };
+  }
+
+  async getAdminStoreMetrics(storeId: string) {
+    try {
+      const [store, revenue, orders] = await Promise.all([
+        Store.findById(storeId).select('metrics'),
+        this.getStoreRevenue(storeId),
+        OrderSchema.aggregate([
+          {
+            $match: {
+              'items.storeId': new mongoose.Types.ObjectId(storeId),
+              status: { 
+                $in: [
+                  'CONFIRMED',
+                  'READY_FOR_PICKUP',
+                  'PICKED_UP',
+                  'IN_TRANSIT',
+                  'DELIVERED'
+                ]
+              }
+            }
+          },
+          { $unwind: '$items' },
+          {
+            $match: {
+              'items.storeId': new mongoose.Types.ObjectId(storeId)
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              totalOrders: { $sum: 1 },
+              totalRevenue: {
+                $sum: { $multiply: ['$items.price', '$items.quantity'] }
+              }
+            }
+          }
+        ])
+      ]);
+
+      const orderStats = orders[0] || { totalOrders: 0, totalRevenue: 0 };
+
+      // Update store metrics with the latest values
+      const updatedStore = await Store.findByIdAndUpdate(storeId, {
+        $set: {
+          'metrics.totalOrders': orderStats.totalOrders,
+          'metrics.totalRevenue': revenue.totalRevenue || 0
+        }
+      }, { new: true });
+
+      return {
+        metrics: {
+          totalOrders: orderStats.totalOrders,
+          totalProducts: store?.metrics?.totalProducts || 0,
+          totalRevenue: revenue.totalRevenue || 0
+        },
+        _id: storeId,
+        storeUrl: updatedStore?.getStoreUrl()
+      };
+    } catch (error) {
+      console.error('Get admin store metrics error:', error);
+      throw error;
+    }
+  }
+
+  // Add method to get comprehensive store data
+  async getStoreFullData(storeId: string) {
+    try {
+      const store = await Store.findById(storeId)
+        .populate('userId', 'email firstName lastName');
+
+      if (!store) return null;
+
+      const [metrics, revenue, performance] = await Promise.all([
+        this.getAdminStoreMetrics(storeId),
+        this.getStoreRevenue(storeId),
+        this.getProductPerformance(storeId)
+      ]);
+
+      return {
+        store,
+        metrics,
+        revenue,
+        performance
+      };
+    } catch (error) {
+      console.error('Get store full data error:', error);
+      throw error;
+    }
   }
 } 

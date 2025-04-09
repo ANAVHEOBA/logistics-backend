@@ -11,6 +11,7 @@ import { EmailService } from '../../services/email.service';
 import { ConsumerCrud } from '../consumer/consumer.crud';
 import { StoreCrud } from '../store/store.crud';
 import { StoreStatus, StoreCategory } from '../store/store.model';
+import { Store } from '../store/store.model';
 
 // Define the valid order statuses
 const ORDER_STATUSES = [
@@ -810,6 +811,182 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to mark notification as read'
+      });
+    }
+  };
+
+  getStoreMetricsById = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+
+      // Validate storeId
+      if (!mongoose.Types.ObjectId.isValid(storeId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid store ID'
+        });
+        return;
+      }
+
+      const store = await Store.findById(storeId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      // Get all metrics at once
+      const [metrics, revenue, performance] = await Promise.all([
+        this.storeCrud.getAdminStoreMetrics(storeId),
+        this.storeCrud.getStoreRevenue(storeId),
+        this.storeCrud.getProductPerformance(storeId)
+      ]);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          basicMetrics: metrics,
+          revenue,
+          performance,
+          storeInfo: {
+            name: store.storeName,
+            status: store.status,
+            category: store.category,
+            createdAt: store.createdAt
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get store metrics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store metrics'
+      });
+    }
+  };
+
+  getStoreDashboardById = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+      
+      const [revenue, productPerformance, recentOrders] = await Promise.all([
+        this.storeCrud.getStoreRevenue(storeId),
+        this.storeCrud.getProductPerformance(storeId),
+        this.storeCrud.getStoreOrders(storeId, { limit: 5 })
+      ]);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          stats: {
+            revenue,
+            orders: recentOrders.total
+          },
+          recentOrders: recentOrders.data,
+          topProducts: productPerformance
+        }
+      });
+    } catch (error) {
+      console.error('Get store dashboard error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store dashboard'
+      });
+    }
+  };
+
+  getStoreRevenueById = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+
+      // Validate storeId
+      if (!mongoose.Types.ObjectId.isValid(storeId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid store ID'
+        });
+        return;
+      }
+
+      const store = await Store.findById(storeId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      // Get revenue data with optional date range
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+      const revenue = await this.storeCrud.getStoreRevenue(storeId, {
+        startDate,
+        endDate
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          revenue,
+          storeInfo: {
+            name: store.storeName,
+            id: store._id
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get store revenue error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store revenue'
+      });
+    }
+  };
+
+  getStorePerformanceById = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+
+      // Validate storeId
+      if (!mongoose.Types.ObjectId.isValid(storeId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid store ID'
+        });
+        return;
+      }
+
+      const store = await Store.findById(storeId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      // Get performance metrics
+      const performance = await this.storeCrud.getProductPerformance(storeId);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          performance,
+          storeInfo: {
+            name: store.storeName,
+            id: store._id
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get store performance error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store performance'
       });
     }
   };

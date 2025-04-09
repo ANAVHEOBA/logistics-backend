@@ -39,6 +39,12 @@ router.get('/orders/:orderId/receipts', adminController.getOrderReceipts);
 // Add stores endpoint
 router.get('/stores', adminController.getAllStores);
 
+// Add these new routes after router.get('/stores', adminController.getAllStores);
+router.get('/stores/:storeId/metrics', adminController.getStoreMetricsById);
+router.get('/stores/:storeId/revenue', adminController.getStoreRevenueById);
+router.get('/stores/:storeId/performance', adminController.getStorePerformanceById);
+router.get('/stores/:storeId/dashboard', adminController.getStoreDashboardById);
+
 // Payment notification routes
 router.get(
   '/notifications/payments',

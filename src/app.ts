@@ -9,7 +9,9 @@ import productRouter from './modules/product/product.router';
 import consumerRouter from './modules/consumer/consumer.router';
 import zoneRouter from './modules/zone/zone.router';
 import paymentRouter from './modules/payment/payment.router';
+import { cartRouter } from './modules/cart/cart.router';
 import { errorHandler } from './middleware/error.middleware';
+import bodyParser from 'body-parser';
 
 const app = express();
 
@@ -31,8 +33,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/users', userRouter);
@@ -44,6 +46,7 @@ app.use('/api/products', productRouter);
 app.use('/api/consumers', consumerRouter);
 app.use('/api/zones', zoneRouter);
 app.use('/api/payments', paymentRouter);
+app.use('/api/cart', cartRouter);
 
 // Store frontend routes
 app.get('/store/:slug', (req, res) => {

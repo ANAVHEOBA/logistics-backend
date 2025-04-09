@@ -116,4 +116,9 @@ export interface StoreCustomersResponse {
   total: number;
   page: number;
   totalPages: number;
+}
+
+export interface RevenueOptions {
+  startDate?: Date;
+  endDate?: Date;
 } 
