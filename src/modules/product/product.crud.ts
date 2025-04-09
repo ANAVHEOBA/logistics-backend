@@ -72,11 +72,19 @@ export class ProductCrud {
   async deleteProduct(productId: string): Promise<boolean> {
     const product = await Product.findById(productId);
     if (product) {
-      // Delete images from Cloudinary
-      const deletePromises = product.images.map(img => 
-        uploadService.deleteImage(img.publicId)
-      );
-      await Promise.all(deletePromises);
+      // Delete images from Cloudinary only if they have valid publicId
+      const deletePromises = product.images
+        .filter(img => img && typeof img === 'object' && img.publicId)
+        .map(img => uploadService.deleteImage(img.publicId));
+      
+      if (deletePromises.length > 0) {
+        try {
+          await Promise.all(deletePromises);
+        } catch (error) {
+          console.error('Image deletion error:', error);
+          // Continue with product deletion even if image deletion fails
+        }
+      }
     }
     const result = await Product.deleteOne({ _id: productId });
     return result.deletedCount === 1;

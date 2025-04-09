@@ -78,3 +78,6 @@ export const authMiddleware = async (
     });
   }
 };
+
+// Alias for backward compatibility
+export const requireAuth = authMiddleware;
