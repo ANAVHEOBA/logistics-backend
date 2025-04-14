@@ -210,3 +210,24 @@ a@a:~/Downloads/logistics-backend$ curl -X DELETE http://localhost:5000/api/cart
    "success" : true
 }
 a@a:~/Downloads/logistics-backend$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+a@a:~/Downloads/logistics-backend$ curl -X POST http://localhost:5000/api/cart/checkout -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lcklkIjoiNjdiZGJhNTBmY2IyNzIxOGQxNWRlYWI3IiwiZW1haWwiOiJhbmF2aGVvYmF3aXNkb21AZ21haWwuY29tIiwidHlwZSI6ImNvbnN1bWVyIiwiaWF0IjoxNzQ0NTY1Nzc3LCJleHAiOjE3NDQ2NTIxNzd9.VBJROu90XI_-516UtoaMDKNqovEQk4LTmhT8ddfWvJ4" -H "Content-Type: application/json" -d '{"deliveryAddress":{"type":"manual","manualAddress":{"street":"123 Test Street","city":"Test City","state":"Test State","country":"Nigeria","postalCode":"12345","recipientName":"Test User","recipientPhone":"08012345678","recipientEmail":"test@example.com"}},"packageSize":"MEDIUM","isFragile":false,"isExpressDelivery":false,"requiresSpecialHandling":false,"specialInstructions":"Please handle with care","zoneId":"67cd79b5909d2026ccbca928","paymentMethod":"BANK_TRANSFER"}'
+{"success":true,"data":[{"userId":"67bdba50fcb27218d15deab7","pickupAddress":{"type":"manual","manualAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890","recipientEmail":"jessicaanavheoba@gmail.com"}},"deliveryAddress":{"street":"123 Test Street","city":"Test City","state":"Test State","country":"Nigeria","postalCode":"12345","recipientName":"Test User","recipientPhone":"08012345678","recipientEmail":"test@example.com"},"packageSize":"MEDIUM","status":"PENDING","price":2444,"isFragile":false,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-04-17T04:57:45.528Z","items":[{"productId":"67ed71ce455be049fb4ef4ef","storeId":"67b7410f256d7687d08935fd","quantity":4,"price":111,"variantData":[],"_id":"67fc95c9fdf1cbde5bfef14b"}],"specialInstructions":"Please handle with care","deliveryZone":"67cd79b5909d2026ccbca928","zonePrice":2000,"_id":"67fc95c9fdf1cbde5bfef14a","trackingNumber":"LG-20250414-A3786","estimatedWeight":20,"createdAt":"2025-04-14T04:57:45.533Z","updatedAt":"2025-04-14T04:57:45.533Z","__v":0,"paymentInstructions":{"bankDetails":{"accountName":"Default Account","accountNumber":"0123456789","bankName":"Default Bank"},"amount":2444,"deliveryFee":2000,"subtotal":444,"currency":"NGN","instructions":"Please transfer the exact amount in Naira and use your payment reference as the transaction description."}}]}a@a:~/Downloads/logistics-backend$ 

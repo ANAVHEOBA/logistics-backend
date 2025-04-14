@@ -10,6 +10,8 @@ import mongoose from 'mongoose';
 import { AddressCrud } from '../address/address.crud';
 import { ICreateAddressRequest } from '../address/address.model';
 import { PaginationOptions, PaginatedResponse, StoreOrder } from './store.types';
+import { v2 as cloudinary } from 'cloudinary';
+import multer from 'multer';
 
 // First, update the AuthRequest interface to be more explicit
 interface AuthRequest extends Request {
@@ -19,6 +21,29 @@ interface AuthRequest extends Request {
     _id: Types.ObjectId;  // Using Types from mongoose
   };
 }
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Configure multer memory storage
+const storage = multer.memoryStorage();
+export const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 export class StoreController {
   private storeCrud: StoreCrud;
@@ -1018,6 +1043,78 @@ export class StoreController {
       res.status(500).json({
         success: false,
         message: 'Failed to get store customers'
+      });
+    }
+  };
+
+  uploadStoreImage = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      if (!req.file) {
+        res.status(400).json({
+          success: false,
+          message: 'No image file provided'
+        });
+        return;
+      }
+
+      // Delete old image if exists
+      if (store.image?.publicId) {
+        await cloudinary.uploader.destroy(store.image.publicId);
+      }
+
+      // Convert buffer to base64
+      const base64Image = req.file.buffer.toString('base64');
+      const dataUri = `data:${req.file.mimetype};base64,${base64Image}`;
+
+      // Upload new image
+      const result = await cloudinary.uploader.upload(dataUri, {
+        folder: 'stores',
+        transformation: [
+          { width: 800, height: 400, crop: 'fill' }
+        ]
+      });
+
+      // Update store with new image
+      const updatedStore = await this.storeCrud.updateStore(store._id.toString(), {
+        image: {
+          url: result.secure_url,
+          publicId: result.public_id
+        }
+      });
+
+      if (!updatedStore) {
+        throw new Error('Failed to update store');
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          image: updatedStore.image
+        }
+      });
+    } catch (error) {
+      console.error('Upload store image error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload store image'
       });
     }
   };

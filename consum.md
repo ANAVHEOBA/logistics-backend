@@ -28,6 +28,7 @@ a@a:~/logistics-backend$ curl -X POST http://localhost:5000/api/consumers/verify
 
 
 
+
 a@a:~/logistics-backend$ curl http://localhost:5000/api/stores/list?category=FOOD&page=1&limit=10
 [1] 10455
 [2] 10456

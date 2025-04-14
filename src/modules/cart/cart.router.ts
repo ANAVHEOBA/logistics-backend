@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { CartController } from './cart.controller';
 import { authenticateConsumer } from '../../middleware/consumer.middleware';
 import { validateRequest } from '../../middleware/validate-request';
-import { addToCartSchema, updateCartItemSchema } from './cart.schema';
+import { addToCartSchema, updateCartItemSchema, checkoutCartSchema } from './cart.schema';
 
 const router = Router();
 
@@ -69,5 +69,20 @@ router.delete('/', authenticateConsumer, async (req: Request, res: Response, nex
     next(error);
   }
 });
+
+// Checkout cart
+router.post(
+  '/checkout',
+  authenticateConsumer,
+  validateRequest(checkoutCartSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await CartController.checkout(req, res);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export { router as cartRouter }; 

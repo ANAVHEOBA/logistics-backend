@@ -72,6 +72,15 @@ router.post(
   (req: Request, res: Response) => orderController.markOrderPayment(req, res)
 );
 
+// Add new route for cart checkout
+router.post(
+  '/consumer/cart-checkout',
+  authMiddleware,
+  authenticateConsumer,
+  validateConsumerOrder,
+  (req: Request, res: Response) => orderController.processCartCheckout(req, res)
+);
+
 // All other routes require authentication
 router.use(authMiddleware);
 

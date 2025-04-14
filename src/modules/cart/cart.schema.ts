@@ -26,6 +26,30 @@ export const updateCartItemSchema = z.object({
   quantity: z.number().min(1)
 });
 
+export const checkoutCartSchema = z.object({
+  deliveryAddress: z.object({
+    type: z.enum(['saved', 'manual']),
+    savedAddress: z.string().optional(),
+    manualAddress: z.object({
+      street: z.string(),
+      city: z.string(),
+      state: z.string(),
+      country: z.string(),
+      postalCode: z.string(),
+      recipientName: z.string(),
+      recipientPhone: z.string(),
+      recipientEmail: z.string().optional()
+    }).optional()
+  }),
+  packageSize: z.enum(['SMALL', 'MEDIUM', 'LARGE', 'EXTRA_LARGE']),
+  isFragile: z.boolean().optional(),
+  isExpressDelivery: z.boolean().optional(),
+  requiresSpecialHandling: z.boolean().optional(),
+  specialInstructions: z.string().optional(),
+  zoneId: z.string(),
+  paymentMethod: z.enum(['BANK_TRANSFER', 'CASH', 'OTHER'])
+});
+
 export const createCartSchema = z.object({
   userId: z.string().optional(),
   items: z.array(cartItemSchema).optional(),

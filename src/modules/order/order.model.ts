@@ -230,6 +230,8 @@ export interface IConsumerOrderRequest {
   paymentStatus?: PaymentStatus;
   paymentReference?: string;
   totalPrice?: number;
+  price?: number;
+  zonePrice?: number;
   bankAccountDetails?: {
     accountName: string;
     accountNumber: string;
@@ -244,4 +246,29 @@ export interface IConsumerOrdersQuery {
   status?: OrderStatus;
   startDate?: Date;
   endDate?: Date;
+}
+
+export interface ICartCheckoutRequest {
+  orders: {
+    storeId: string;
+    items: {
+      productId: string;
+      quantity: number;
+      variantData?: {
+        name: string;
+        value: string;
+      }[];
+      price: number;
+    }[];
+    deliveryAddress: IDeliveryAddress;
+    packageSize?: PackageSize;
+    isFragile?: boolean;
+    isExpressDelivery?: boolean;
+    requiresSpecialHandling?: boolean;
+    specialInstructions?: string;
+    zoneId: string;
+    zonePrice: number;
+    paymentMethod: PaymentMethod;
+    totalPrice: number;
+  }[];
 }

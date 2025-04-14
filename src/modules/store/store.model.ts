@@ -19,6 +19,10 @@ export interface IStore extends Document {
     country: string;
     postalCode: string;
   };
+  image?: {
+    url: string;
+    publicId: string;
+  };
   branding: {
     logo?: string;
     banner?: string;
@@ -155,6 +159,10 @@ const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>({
       type: String,
       required: true
     }
+  },
+  image: {
+    url: String,
+    publicId: String
   },
   branding: {
     logo: String,

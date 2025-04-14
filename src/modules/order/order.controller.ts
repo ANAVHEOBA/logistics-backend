@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { OrderCrud } from './order.crud';
-import { ICreateOrderRequest, OrderStatus, IManualAddress, IDeliveryAddress, IConsumerOrderRequest, PaymentStatus, PaymentMethod } from './order.model';
+import { ICreateOrderRequest, OrderStatus, IManualAddress, IDeliveryAddress, IConsumerOrderRequest, PaymentStatus, PaymentMethod, IOrder, ICartCheckoutRequest } from './order.model';
 import { AddressCrud } from '../address/address.crud';
 import { EmailService } from '../../services/email.service';
 import { UserCrud } from '../user/user.crud';
@@ -16,6 +16,8 @@ import { config } from '../../config/environment';
 import { generatePaymentReference } from '../../utils/payment.helper';
 import { AdminCrud } from '../admin/admin.crud';
 import { IConsumerOrdersQuery } from './order.model';
+import { NotFoundError } from '../../errors/not-found-error';
+import { BadRequestError } from '../../errors/bad-request-error';
 
 export class OrderController {
   private orderCrud: OrderCrud;
@@ -401,7 +403,7 @@ export class OrderController {
       const orderItems = await Promise.all(orderData.items.map(async (item) => {
         const product = await this.productCrud.getProductById(item.productId);
         if (!product) {
-          throw new Error(`Product not found: ${item.productId}`);
+          throw new NotFoundError(`Product not found: ${item.productId}`);
         }
 
         let itemPrice = product.price;
@@ -440,7 +442,8 @@ export class OrderController {
           totalPrice,
           paymentMethod: orderData.paymentMethod || 'BANK_TRANSFER',
           paymentReference: generatePaymentReference(),
-          bankAccountDetails: config.bankAccounts.default
+          bankAccountDetails: config.bankAccounts.default,
+          packageSize: orderData.packageSize || 'MEDIUM'
         },
         selectedZone._id.toString(),
         deliveryFee
@@ -468,7 +471,7 @@ export class OrderController {
       console.error('Place consumer order error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to place order'
+        message: error instanceof Error ? error.message : 'Failed to place order'
       });
     }
   }
@@ -761,5 +764,73 @@ export class OrderController {
         consumerName: `${order.userId.firstName} ${order.userId.lastName}`
       }
     });
+  }
+
+  public async processCartCheckout(req: Request, res: Response): Promise<void> {
+    try {
+      const consumerId = req.consumer!.consumerId;
+      const cartCheckoutData = req.body as ICartCheckoutRequest;
+      
+      const orders: IOrder[] = [];
+      
+      // Process each store's order in parallel
+      await Promise.all(cartCheckoutData.orders.map(async (storeOrder) => {
+        // Get store details
+        const store = await this.storeCrud.findById(storeOrder.storeId);
+        if (!store) {
+          throw new NotFoundError('Store not found');
+        }
+
+        // Verify store is active
+        if (store.status !== 'ACTIVE') {
+          throw new BadRequestError('Store is not active');
+        }
+
+        // Create order with the total price from cart
+        const order = await this.orderCrud.createConsumerOrder(
+          consumerId,
+          storeOrder.storeId,
+          {
+            ...storeOrder,
+            packageSize: storeOrder.packageSize || 'MEDIUM',
+            paymentStatus: 'PENDING',
+            paymentReference: generatePaymentReference(),
+            price: storeOrder.totalPrice,
+            bankAccountDetails: config.bankAccounts.default,
+            pickupAddress: {
+              type: 'manual',
+              manualAddress: {
+                street: store.address.street,
+                city: store.address.city,
+                state: store.address.state,
+                country: store.address.country,
+                postalCode: store.address.postalCode,
+                recipientName: store.storeName,
+                recipientPhone: store.contactInfo.phone,
+                recipientEmail: store.contactInfo.email
+              }
+            }
+          },
+          storeOrder.zoneId,
+          storeOrder.zonePrice
+        );
+
+        // Send notifications
+        await this.sendOrderNotifications(order, store, consumerId);
+        
+        orders.push(order);
+      }));
+
+      res.status(201).json({
+        success: true,
+        data: orders
+      });
+    } catch (error) {
+      console.error('Cart checkout error:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to process cart checkout'
+      });
+    }
   }
 }

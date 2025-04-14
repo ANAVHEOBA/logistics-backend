@@ -1,5 +1,5 @@
 import express from 'express';
-import { StoreController } from './store.controller';
+import { StoreController, upload } from './store.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
 
 const router = express.Router();
@@ -32,5 +32,13 @@ router.post('/orders/:orderId/ready', authMiddleware, storeController.markOrderR
 router.get('/:slug', storeController.getPublicStore);
 router.get('/:slug/products', storeController.getStoreProducts);
 router.post('/:slug/orders', storeController.createGuestOrder);
+
+// Store image upload route
+router.post(
+  '/upload-image',
+  authMiddleware,
+  upload.single('image'),
+  storeController.uploadStoreImage
+);
 
 export default router; 
