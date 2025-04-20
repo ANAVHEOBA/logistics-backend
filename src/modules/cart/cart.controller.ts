@@ -170,16 +170,20 @@ export class CartController {
         return acc;
       }, {} as Record<string, ICartItem[]>);
 
-      // Get zone price for the delivery zone
+      // Get zone price for the delivery zone - this will be split among stores
       const zone = await CartController.zoneCrud.getZoneById(req.body.zoneId);
       if (!zone) {
         throw new BadRequestError('Invalid delivery zone');
       }
-      const zonePrice = zone.deliveryPrice || 0;
+      const totalZonePrice = zone.deliveryPrice || 0;
+      
+      // Calculate delivery fee per store (split equally among stores)
+      const numberOfStores = Object.keys(storeItems).length;
+      const zonePricePerStore = totalZonePrice / numberOfStores;
 
       // Calculate total product price for all items
       const productTotal = cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
-      const totalPrice = productTotal + zonePrice;
+      const totalPrice = productTotal + totalZonePrice;
 
       // Verify all stores exist and are active
       for (const [storeId, items] of Object.entries(storeItems)) {
@@ -198,8 +202,7 @@ export class CartController {
         orders: Object.entries(storeItems).map(([storeId, items]) => {
           // Calculate total product price for this store's items
           const storeProductTotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
-          const storeTotalPrice = storeProductTotal + zonePrice;
-
+          
           return {
             storeId: storeId,
             items: items.map(item => ({
@@ -215,9 +218,9 @@ export class CartController {
             requiresSpecialHandling: req.body.requiresSpecialHandling || false,
             specialInstructions: req.body.specialInstructions || '',
             zoneId: req.body.zoneId,
-            zonePrice: zonePrice,
+            zonePrice: zonePricePerStore, // Each store gets an equal portion of delivery fee
             paymentMethod: req.body.paymentMethod || 'BANK_TRANSFER',
-            totalPrice: storeTotalPrice
+            totalPrice: storeProductTotal + zonePricePerStore // Store's products + its share of delivery
           };
         })
       };
@@ -247,18 +250,24 @@ export class CartController {
         await cart.save();
 
         // Add payment instructions to the response
-        const responseData = ordersResponse.map((order: IOrder) => ({
-          ...order,
-          paymentInstructions: {
-            reference: order.paymentReference,
-            bankDetails: config.bankAccounts.default,
-            amount: order.price,
-            deliveryFee: zonePrice,
-            subtotal: order.price - zonePrice,
-            currency: 'NGN',
-            instructions: "Please transfer the exact amount in Naira and use your payment reference as the transaction description."
-          }
-        }));
+        const responseData = {
+          orders: ordersResponse.map((order: IOrder) => ({
+            ...order,
+            paymentInstructions: {
+              reference: order.paymentReference,
+              bankDetails: config.bankAccounts.default,
+              amount: order.price,
+              deliveryFee: zonePricePerStore,
+              subtotal: order.price - zonePricePerStore,
+              currency: 'NGN',
+              instructions: "Please transfer the exact amount in Naira and use your payment reference as the transaction description."
+            }
+          })),
+          totalAmount: totalPrice,
+          totalDeliveryFee: totalZonePrice,
+          totalProductPrice: productTotal,
+          currency: 'NGN'
+        };
 
         // Send final response with all order details
         res.status(201).json({
