@@ -104,6 +104,14 @@ interface IStoreMethods {
   getStoreUrl(): string;
 }
 
+export interface StoreListOptions {
+  filter?: Record<string, any>;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>({
   userId: {
     type: Schema.Types.ObjectId,
@@ -281,6 +289,42 @@ storeSchema.set('toJSON', {
     return ret;
   }
 });
+
+// Add the listStores static method
+storeSchema.statics.listStores = async function(options: StoreListOptions) {
+  const {
+    filter = {},
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
+  } = options;
+
+  const skip = (page - 1) * limit;
+  const sort: any = {};
+  sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+  const [stores, total] = await Promise.all([
+    this.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    this.countDocuments(filter)
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    stores,
+    pagination: {
+      total,
+      page,
+      totalPages,
+      hasMore: page * limit < total
+    }
+  };
+};
 
 // Export the model with proper typing
 export const Store = mongoose.model<IStore, mongoose.Model<IStore, {}, IStoreMethods>>('Store', storeSchema); 

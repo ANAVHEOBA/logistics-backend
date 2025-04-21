@@ -174,4 +174,22 @@ export interface IStore {
   };
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface StoreListOptions {
+  filter?: any;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface StoreListResponse {
+  stores: IStore[];
+  pagination: {
+    total: number;
+    page: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
 } 

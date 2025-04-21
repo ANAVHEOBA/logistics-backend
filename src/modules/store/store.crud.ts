@@ -7,7 +7,8 @@ import {
   PaginatedResponse, 
   StoreOrder,
   StoreCustomer,
-  RevenueOptions
+  RevenueOptions,
+  StoreListResponse
 } from './store.types';
 import { OrderStatus } from '../order/order.model';
 
@@ -116,7 +117,7 @@ export class StoreCrud {
     state,
     country,
     minRating
-  }: ListStoresParams) {
+  }: ListStoresParams): Promise<StoreListResponse> {
     const skip = (page - 1) * limit;
     const sort: Record<string, 1 | -1> = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
@@ -151,13 +152,14 @@ export class StoreCrud {
       .select('-userId -settings.privateData');
 
     const total = await Store.countDocuments(finalFilter);
+    const totalPages = Math.ceil(total / limit);
 
     return {
       stores,
       pagination: {
         total,
         page,
-        totalPages: Math.ceil(total / limit),
+        totalPages,
         hasMore: page * limit < total
       }
     };

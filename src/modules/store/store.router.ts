@@ -6,6 +6,9 @@ import { upload } from './store.controller';
 const router = Router();
 const storeController = new StoreController();
 
+// Public routes (no auth required)
+router.get('/list', storeController.listStores);
+
 // Protected routes (require authentication)
 router.post('/', authMiddleware, storeController.createStore);
 router.get('/my-store', authMiddleware, storeController.getMyStore);

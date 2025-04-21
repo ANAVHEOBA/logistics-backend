@@ -603,21 +603,36 @@ export class StoreController {
         filter.category = category;
       }
 
+      // Add location filters
+      if (city) {
+        filter['address.city'] = city;
+      }
+      if (state) {
+        filter['address.state'] = state;
+      }
+      if (country) {
+        filter['address.country'] = country;
+      }
+
+      // Add rating filter if needed
+      if (minRating) {
+        filter['metrics.averageRating'] = { $gte: Number(minRating) };
+      }
+
       const stores = await this.storeCrud.listStores({
         filter,
         page: Number(page),
         limit: Number(limit),
         sortBy: sortBy as string,
-        sortOrder: sortOrder as 'asc' | 'desc',
-        city: city as string,
-        state: state as string,
-        country: country as string,
-        minRating: minRating ? Number(minRating) : undefined
+        sortOrder: sortOrder as 'asc' | 'desc'
       });
 
       res.status(200).json({
         success: true,
-        data: stores
+        data: {
+          stores: stores.stores,
+          pagination: stores.pagination
+        }
       });
     } catch (error) {
       console.error('List stores error:', error);
