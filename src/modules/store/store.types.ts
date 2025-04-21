@@ -1,4 +1,5 @@
 import { StoreCategory, StoreStatus } from './store.model';
+import { Types } from 'mongoose';
 
 export interface CreateStoreDTO {
   storeName: string;
@@ -121,4 +122,56 @@ export interface StoreCustomersResponse {
 export interface RevenueOptions {
   startDate?: Date;
   endDate?: Date;
+}
+
+export interface PaymentDetails {
+  accountName?: string;
+  accountNumber?: string;
+  bankName?: string;
+}
+
+export interface IStore {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  storeName: string;
+  description: string;
+  category: StoreCategory;
+  status: StoreStatus;
+  contactInfo: {
+    email: string;
+    phone: string;
+    whatsapp?: string;
+  };
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+  };
+  branding?: {
+    logo?: string;
+    banner?: string;
+    colors?: {
+      primary: string;
+      secondary: string;
+    };
+  };
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+  };
+  businessInfo?: {
+    registrationNumber?: string;
+    taxId?: string;
+  };
+  paymentDetails?: PaymentDetails;
+  metrics: {
+    totalOrders: number;
+    totalProducts: number;
+    totalRevenue: number;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 } 

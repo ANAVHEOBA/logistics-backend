@@ -54,6 +54,11 @@ export interface IStore extends Document {
   updatedAt: Date;
   slug: string;
   getStoreUrl(): string;
+  paymentDetails: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+  };
 }
 
 export enum StoreCategory {
@@ -193,6 +198,20 @@ const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>({
     allowRatings: {
       type: Boolean,
       default: true
+    }
+  },
+  paymentDetails: {
+    accountName: {
+      type: String,
+      trim: true
+    },
+    accountNumber: {
+      type: String,
+      trim: true
+    },
+    bankName: {
+      type: String,
+      trim: true
     }
   },
   metrics: {

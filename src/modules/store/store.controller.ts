@@ -1118,4 +1118,164 @@ export class StoreController {
       });
     }
   };
+
+  addPaymentDetails = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      const { accountName, accountNumber, bankName } = req.body;
+
+      // Validate required fields
+      if (!accountName || !accountNumber || !bankName) {
+        res.status(400).json({
+          success: false,
+          message: 'Account name, account number, and bank name are required'
+        });
+        return;
+      }
+
+      const updatedStore = await this.storeCrud.updateStore(store._id.toString(), {
+        paymentDetails: {
+          accountName,
+          accountNumber,
+          bankName
+        }
+      });
+
+      if (!updatedStore) {
+        res.status(500).json({
+          success: false,
+          message: 'Failed to update store payment details'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          paymentDetails: updatedStore.paymentDetails
+        }
+      });
+    } catch (error) {
+      console.error('Add payment details error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to add payment details'
+      });
+    }
+  };
+
+  updatePaymentDetails = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      const { accountName, accountNumber, bankName } = req.body;
+
+      // Validate at least one field is provided
+      if (!accountName && !accountNumber && !bankName) {
+        res.status(400).json({
+          success: false,
+          message: 'At least one field is required for update'
+        });
+        return;
+      }
+
+      const currentPaymentDetails = store.paymentDetails || {};
+      const updatedStore = await this.storeCrud.updateStore(store._id.toString(), {
+        paymentDetails: {
+          accountName: accountName || currentPaymentDetails.accountName,
+          accountNumber: accountNumber || currentPaymentDetails.accountNumber,
+          bankName: bankName || currentPaymentDetails.bankName
+        }
+      });
+
+      if (!updatedStore) {
+        res.status(500).json({
+          success: false,
+          message: 'Failed to update store payment details'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          paymentDetails: updatedStore.paymentDetails
+        }
+      });
+    } catch (error) {
+      console.error('Update payment details error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update payment details'
+      });
+    }
+  };
+
+  getPaymentDetails = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          paymentDetails: store.paymentDetails || {}
+        }
+      });
+    } catch (error) {
+      console.error('Get payment details error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get payment details'
+      });
+    }
+  };
 } 

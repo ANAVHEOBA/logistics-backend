@@ -990,4 +990,44 @@ export class AdminController {
       });
     }
   };
+
+  getStorePaymentDetails = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+
+      // Validate storeId
+      if (!mongoose.Types.ObjectId.isValid(storeId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid store ID'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findById(storeId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          storeId: store._id,
+          storeName: store.storeName,
+          paymentDetails: store.paymentDetails || {},
+          contactInfo: store.contactInfo
+        }
+      });
+    } catch (error) {
+      console.error('Get store payment details error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get store payment details'
+      });
+    }
+  };
 }

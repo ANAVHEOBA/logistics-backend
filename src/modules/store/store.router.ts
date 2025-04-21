@@ -1,44 +1,49 @@
-import express from 'express';
-import { StoreController, upload } from './store.controller';
+import { Router } from 'express';
+import { StoreController } from './store.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
+import { upload } from './store.controller';
 
-const router = express.Router();
+const router = Router();
 const storeController = new StoreController();
 
-// Add this new public route at the top
-router.get('/list', storeController.listStores);  // New endpoint for listing stores
-
-// Protected routes (auth required) - Move these BEFORE the :slug routes
+// Protected routes (require authentication)
+router.post('/', authMiddleware, storeController.createStore);
 router.get('/my-store', authMiddleware, storeController.getMyStore);
-router.post('/setup', authMiddleware, storeController.createStore);
 router.put('/', authMiddleware, storeController.updateStore);
 router.delete('/', authMiddleware, storeController.deleteStore);
+
+// Store metrics and dashboard
 router.get('/metrics', authMiddleware, storeController.getStoreMetrics);
+router.get('/revenue', authMiddleware, storeController.getStoreRevenue);
+router.get('/dashboard', authMiddleware, storeController.getStoreDashboard);
+
+// Store settings and status
 router.put('/settings', authMiddleware, storeController.updateStoreSettings);
 router.post('/activate', authMiddleware, storeController.activateStore);
+
+// Image upload route
+router.post('/upload-image', authMiddleware, upload.single('image'), storeController.uploadStoreImage);
+
+// Store address routes
 router.post('/address', authMiddleware, storeController.addStoreAddress);
 router.put('/address', authMiddleware, storeController.updateStoreAddress);
-router.get('/orders', authMiddleware, storeController.getStoreOrders);
-router.get('/revenue', authMiddleware, storeController.getStoreRevenue);
-router.get('/products/performance', authMiddleware, storeController.getProductPerformance);
-router.get('/dashboard', authMiddleware, storeController.getStoreDashboard);
-router.get('/customers', authMiddleware, storeController.getStoreCustomers);
 
 // Store order management routes
+router.get('/orders', authMiddleware, storeController.getStoreOrders);
 router.get('/orders/:orderId', authMiddleware, storeController.getStoreOrderDetails);
-router.post('/orders/:orderId/ready', authMiddleware, storeController.markOrderReady);
+router.put('/orders/:orderId/ready', authMiddleware, storeController.markOrderReady);
+
+// Payment details routes
+router.post('/payment-details', authMiddleware, storeController.addPaymentDetails);
+router.put('/payment-details', authMiddleware, storeController.updatePaymentDetails);
+router.get('/payment-details', authMiddleware, storeController.getPaymentDetails);
+
+// Store customers
+router.get('/customers', authMiddleware, storeController.getStoreCustomers);
 
 // Public routes (no auth required) - Move these AFTER the specific routes
 router.get('/:slug', storeController.getPublicStore);
 router.get('/:slug/products', storeController.getStoreProducts);
-router.post('/:slug/orders', storeController.createGuestOrder);
-
-// Store image upload route
-router.post(
-  '/upload-image',
-  authMiddleware,
-  upload.single('image'),
-  storeController.uploadStoreImage
-);
+router.post('/:slug/orders/guest', storeController.createGuestOrder);
 
 export default router; 

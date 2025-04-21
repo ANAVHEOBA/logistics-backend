@@ -38,6 +38,7 @@ router.get('/orders/:orderId/receipts', adminController.getOrderReceipts);
 
 // Add stores endpoint
 router.get('/stores', adminController.getAllStores);
+router.get('/stores/:storeId/payment-details', adminController.getStorePaymentDetails);
 
 // Add these new routes after router.get('/stores', adminController.getAllStores);
 router.get('/stores/:storeId/metrics', adminController.getStoreMetricsById);
