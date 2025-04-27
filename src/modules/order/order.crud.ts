@@ -169,6 +169,10 @@ export class OrderCrud {
       const order = await OrderSchema.findOne(query)
         .populate('pickupAddress')
         .populate('deliveryAddress')
+        .populate({
+          path: 'userId',
+          select: 'firstName lastName email phone'
+        })
         .exec();
       return order ? this.toOrderResponse(order) : null;
     } catch (error) {
@@ -294,6 +298,14 @@ export class OrderCrud {
         OrderSchema.find(query)
           .populate('pickupAddress')
           .populate('deliveryAddress')
+          .populate({
+            path: 'userId',
+            select: 'firstName lastName'
+          })
+          .populate({
+            path: 'items.storeId',
+            select: 'storeName'
+          })
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limit)
@@ -512,12 +524,40 @@ export class OrderCrud {
     }
   }
 
-  private toOrderResponse(order: IOrderDocument): IOrder {
+  private toOrderResponse(order: IOrderDocument): any {
     const orderObject = order.toObject();
+    
+    // Calculate total product price
+    const productTotal = orderObject.items.reduce((sum: number, item: any) => {
+      return sum + (item.price * item.quantity);
+    }, 0);
+
+    const deliveryFee = orderObject.zonePrice || 0;
+
+    // Handle consumer information
+    let consumerInfo = null;
+    if (orderObject.userId) {
+      if (typeof orderObject.userId === 'object') {
+        consumerInfo = {
+          name: `${orderObject.userId.firstName} ${orderObject.userId.lastName}`,
+          email: orderObject.userId.email,
+          phone: orderObject.userId.phone,
+          isGuest: false
+        };
+      }
+    } else if (orderObject.guestInfo) {
+      consumerInfo = {
+        name: `${orderObject.guestInfo.firstName} ${orderObject.guestInfo.lastName}`,
+        email: orderObject.guestInfo.email,
+        phone: orderObject.guestInfo.phone,
+        isGuest: true
+      };
+    }
+
     return {
       ...orderObject,
       _id: orderObject._id.toString(),
-      userId: orderObject.userId ? orderObject.userId.toString() : undefined,
+      consumer: consumerInfo,
       pickupAddress: orderObject.pickupAddress ? (
         typeof orderObject.pickupAddress === 'object' ? 
           orderObject.pickupAddress : // Keep manual address as is for guest orders
@@ -531,9 +571,17 @@ export class OrderCrud {
       items: orderObject.items.map((item: IOrderItemBase & { productId: any; storeId: any }) => ({
         ...item,
         productId: typeof item.productId === 'object' ? item.productId.toString() : item.productId,
-        storeId: typeof item.storeId === 'object' ? item.storeId.toString() : item.storeId
-      }))
-    } as IOrder;
+        storeId: typeof item.storeId === 'object' ? {
+          _id: item.storeId._id.toString(),
+          storeName: item.storeId.storeName
+        } : item.storeId
+      })),
+      priceBreakdown: {
+        productTotal,
+        deliveryFee,
+        total: orderObject.price
+      }
+    };
   }
 
   async findConsumerOrders(

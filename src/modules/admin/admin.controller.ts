@@ -12,6 +12,7 @@ import { ConsumerCrud } from '../consumer/consumer.crud';
 import { StoreCrud } from '../store/store.crud';
 import { StoreStatus, StoreCategory } from '../store/store.model';
 import { Store } from '../store/store.model';
+import { ProductCrud } from '../product/product.crud';
 
 // Define the valid order statuses
 const ORDER_STATUSES = [
@@ -32,6 +33,7 @@ export class AdminController {
   private emailService: EmailService;
   private consumerCrud: ConsumerCrud;
   private storeCrud: StoreCrud;
+  private productCrud: ProductCrud;
 
   constructor() {
     this.adminCrud = new AdminCrud();
@@ -40,6 +42,7 @@ export class AdminController {
     this.emailService = new EmailService();
     this.consumerCrud = new ConsumerCrud();
     this.storeCrud = new StoreCrud();
+    this.productCrud = new ProductCrud();
   }
 
   createFirstAdmin = async (req: Request, res: Response): Promise<void> => {
@@ -671,6 +674,7 @@ export class AdminController {
         return;
       }
 
+      // Get order with populated data
       const order = await this.orderCrud.findById(orderId);
       
       if (!order) {
@@ -681,13 +685,79 @@ export class AdminController {
         return;
       }
 
-      // Return payment receipts from the order
+      // Get consumer details if order has a userId
+      let consumerDetails = null;
+      if (order.userId) {
+        const consumer = await this.consumerCrud.findById(order.userId);
+        if (consumer) {
+          consumerDetails = {
+            name: `${consumer.firstName} ${consumer.lastName}`,
+            email: consumer.email,
+            phone: consumer.phone,
+            isGuest: false
+          };
+        }
+      } else if (order.guestInfo) {
+        consumerDetails = {
+          name: `${order.guestInfo.firstName} ${order.guestInfo.lastName}`,
+          email: order.guestInfo.email,
+          phone: order.guestInfo.phone,
+          isGuest: true
+        };
+      }
+
+      // Get product and store details for each item
+      const itemsWithDetails = await Promise.all(
+        order.items.map(async (item) => {
+          const product = await this.productCrud.getProductById(item.productId);
+          const store = await this.storeCrud.findById(item.storeId);
+          
+          return {
+            ...item,
+            productName: product?.name || 'Product not found',
+            productDescription: product?.description,
+            store: store ? {
+              storeName: store.storeName,
+              storeId: store._id,
+              contactInfo: store.contactInfo
+            } : null
+          };
+        })
+      );
+
+      // Calculate price breakdown
+      const productTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const deliveryFee = order.zonePrice || 0;
+      const totalPrice = productTotal + deliveryFee;
+
+      // Return comprehensive order details
       res.status(200).json({
         success: true,
         data: {
           orderId: order._id,
           trackingNumber: order.trackingNumber,
-          paymentReceipts: order.paymentReceipts || []
+          status: order.status,
+          createdAt: order.createdAt,
+          consumer: consumerDetails,
+          items: itemsWithDetails,
+          deliveryDetails: {
+            pickupAddress: order.pickupAddress,
+            deliveryAddress: order.deliveryAddress,
+            packageSize: order.packageSize,
+            isExpressDelivery: order.isExpressDelivery,
+            estimatedDeliveryDate: order.estimatedDeliveryDate
+          },
+          paymentDetails: {
+            status: order.paymentStatus,
+            method: order.paymentMethod,
+            reference: order.paymentReference,
+            receipts: order.paymentReceipts || [],
+            priceBreakdown: {
+              productTotal,
+              deliveryFee,
+              total: totalPrice
+            }
+          }
         }
       });
     } catch (error) {
