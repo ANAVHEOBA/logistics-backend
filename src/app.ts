@@ -22,6 +22,7 @@ const corsOptions = {
     'http://localhost:3001',
     'http://localhost:3002',//   // React development server
     'https://www.gofroma2zafrica.com',
+    'https://www.admin.gofroma2zafrica.com',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
