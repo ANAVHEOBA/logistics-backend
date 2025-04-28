@@ -10,10 +10,16 @@ export class ZoneController {
 
   createZone = async (req: Request, res: Response): Promise<void> => {
     try {
+      console.log('Creating zone with data:', req.body);
       const zone = await this.zoneCrud.createZone(req.body);
       res.status(201).json({ success: true, data: zone });
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Failed to create zone' });
+      console.error('Zone creation error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to create zone',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   };
 

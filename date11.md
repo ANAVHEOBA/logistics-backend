@@ -1,12 +1,9 @@
-ths create a zone as an admn : a@a:~/logistics-backend$ curl -X POST http://localhost:5000/api/zones \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQxNTE5MTYxLCJleHAiOjE3NDE2MDU1NjF9.ILlHcIAqd0zMIa6PpfJFpZQctjm0L136pdIM-JHIwtU" \
--H "Content-Type: application/json" \
--d '{
-  "name": "Lagos",
+ths create a zone as an admn : a@a:~/logistics-backend$ a@a:~/Downloads/logistics-backend$ curl -X POST http://localhost:5000/api/zones -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQ1ODU0NDcwLCJleHAiOjE3NDU5NDA4NzB9.lFIk2YGsIE4OxaxYR0blm0tjwtOXQAzQxe2yCaDwVLQ" -H "Content-Type: application/json" -d '{
+  "name": "Lagoss",
   "deliveryPrice": 2000,
   "isActive": true
 }'
-{"success":true,"data":{"name":"Lagos","deliveryPrice":2000,"isActive":true,"_id":"67cd79b5909d2026ccbca928","createdAt":"2025-03-09T11:21:25.315Z","updatedAt":"2025-03-09T11:21:25.315Z","__v":0}}a@a:~/logistics-backend$ 
+{"success":true,"data":{"name":"Lagoss","deliveryPrice":2000,"isActive":true,"_id":"680fa0ed91e0e80ab6fddc49","createdAt":"2025-04-28T15:38:21.407Z","updatedAt":"2025-04-28T15:38:21.407Z","__v":0}}a@a:~/Downloads/logistics-backend$ 
 
 
 2. ths verfy that the zone was created : a@a:~/logistics-backend$ curl -X GET http://localhost:5000/api/zones
