@@ -20,18 +20,30 @@ const corsOptions = {
   origin: [
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://localhost:3002',//   // React development server
+    'http://localhost:3002',
     'https://www.gofroma2zafrica.com',
     'https://www.admin.gofroma2zafrica.com',
+    'https://admin.gofroma2zafrica.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  preflightContinue: false,
+  maxAge: 86400 // 24 hours
 };
 
 // Apply CORS with options
 app.use(cors(corsOptions));
+
+// Add CORS headers for all responses
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
 
 // Middleware
 app.use(bodyParser.json());
