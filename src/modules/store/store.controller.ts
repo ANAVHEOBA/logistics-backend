@@ -1293,4 +1293,62 @@ export class StoreController {
       });
     }
   };
+
+
+
+
+  //set up a store method
+
+  setupStore = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+  
+      // Check if user already has a store
+      const existingStore = await this.storeCrud.findByUserId(userId);
+      if (existingStore) {
+        res.status(400).json({
+          success: false,
+          message: 'User already has a store'
+        });
+        return;
+      }
+  
+      // Create store with initial status
+      const storeData = {
+        ...req.body,
+        userId: new mongoose.Types.ObjectId(userId),
+        status: StoreStatus.PENDING,
+        settings: {
+          isVerified: false,
+          isFeaturedStore: false,
+          allowRatings: true
+        },
+        metrics: {
+          totalOrders: 0,
+          totalProducts: 0,
+          totalRevenue: 0
+        }
+      };
+  
+      const store = await this.storeCrud.createStore(storeData);
+  
+      res.status(201).json({
+        success: true,
+        data: store
+      });
+    } catch (error) {
+      console.error('Setup store error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to setup store'
+      });
+    }
+  };
 } 

@@ -17,6 +17,8 @@ router.delete('/', authMiddleware, storeController.deleteStore);
 
 // Store metrics and dashboard
 router.get('/metrics', authMiddleware, storeController.getStoreMetrics);
+// Add this with the other routes
+router.post('/setup', authMiddleware, storeController.setupStore);
 router.get('/revenue', authMiddleware, storeController.getStoreRevenue);
 router.get('/dashboard', authMiddleware, storeController.getStoreDashboard);
 
