@@ -66,7 +66,7 @@ export class EmailService {
     const additionalNotes = order.statusNotes ? `<p><strong>Additional Notes:</strong> ${order.statusNotes}</p>` : '';
 
     const mailOptions = {
-      from: `Logistics System <${config.email.auth.user}>`,
+      from: `${config.email.auth.user}`,
       to: user.email,
       subject: `Order Status Update - ${order.trackingNumber}`,
       html: `
@@ -95,7 +95,7 @@ export class EmailService {
 
   async sendOrderConfirmation(user: IUser, order: IOrder): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.auth.user}>`,
+      from: `${config.email.auth.user}`,
       to: user.email,
       subject: `Order Confirmation - ${order.trackingNumber}`,
       html: `
@@ -148,7 +148,7 @@ export class EmailService {
     items: IOrderItemResponse[]
   ): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.auth.user}>`,
+      from: `${config.email.auth.user}`,
       to: storeEmail,
       subject: `New Order Received - ${order.trackingNumber}`,
       html: `
@@ -184,7 +184,7 @@ export class EmailService {
 
   async sendDeliveryConfirmation(user: IUser, order: IOrder): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.auth.user}>`,
+      from: `${config.email.auth.user}`,
       to: user.email,
       subject: `Delivery Confirmation - ${order.trackingNumber}`,
       html: `
@@ -211,7 +211,7 @@ export class EmailService {
 
   async sendGuestOrderConfirmation(email: string, order: IOrder): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.auth.user}>`,
+      from: `${config.email.auth.user}`,
       to: email,
       subject: `Order Confirmation - ${order.trackingNumber}`,
       html: `
@@ -241,7 +241,7 @@ export class EmailService {
 
   async sendConsumerOrderConfirmation(recipient: IEmailRecipient, order: IOrder): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.auth.user}>`,
+      from: `${config.email.auth.user}`,
       to: recipient.email,
       subject: `Order Confirmation - ${order.trackingNumber}`,
       html: `
@@ -289,7 +289,7 @@ export class EmailService {
     const additionalNotes = notes ? `<p><strong>Additional Notes:</strong> ${notes}</p>` : '';
 
     const mailOptions = {
-      from: `Logistics System <${config.email.auth.user}>`,
+      from: `${config.email.auth.user}`,
       to: consumer.email,
       subject: `Order Status Update - ${order.trackingNumber}`,
       html: `
