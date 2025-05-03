@@ -808,6 +808,46 @@ export class AdminController {
     }
   };
 
+  updateStoreStatus = async (req: Request, res: Response): Promise<void> => {
+    const { storeId } = req.params;  // Extracting storeId from URL parameters
+    const { status }: { status: StoreStatus } = req.body;
+
+    if (!Object.values(StoreStatus).includes(status)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid status value'
+      });
+    }
+
+    try {
+      // Find the store by its ID and update the status
+      const store = await Store.findByIdAndUpdate(
+        storeId, 
+        { status },
+        { new: true } // Return the updated store
+      );
+
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+      }
+
+      // Respond with the updated store data
+      res.status(200).json({
+        success: true,
+        data: store
+      });
+    } catch(e) {
+      console.error('Update store status error:', e);
+       res.status(500).json({
+        success: false,
+        message: 'Failed to update store status'
+      });
+    }
+  }
+
   getReadyForPickupOrders = async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;

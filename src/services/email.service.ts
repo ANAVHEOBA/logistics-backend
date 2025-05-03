@@ -38,7 +38,7 @@ export class EmailService {
   // Add generic send email method
   static async sendEmail(to: string, subject: string, html: string): Promise<void> {
     const mailOptions = {
-      from: `Logistics System <${config.email.auth.user}>`,
+      from: `${config.email.auth.user}`,
       to,
       subject,
       html

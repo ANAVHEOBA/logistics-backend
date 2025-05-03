@@ -23,7 +23,7 @@ export const connectDatabase = async (): Promise<void> => {
       try {
         const conn = await mongoose.connect(config.mongodbUri, options);
         console.log(`MongoDB Connected: ${conn.connection.host}`);
-        
+
         // Add connection event listeners
         mongoose.connection.on('error', (err) => {
           console.error('MongoDB connection error:', err);
@@ -63,3 +63,36 @@ export const connectDatabase = async (): Promise<void> => {
     }
   }
 };
+
+
+
+// export const connectDatabase = async (): Promise<void> => {
+//   mongoose.set("strictQuery", false);
+//   const mongoDB = "mongodb://localhost:27018"; // MongoDB URI
+//
+//   try {
+//     // Use connection options to handle deprecations and improve connection
+//     await mongoose.connect(mongoDB, {
+//       useNewUrlParser: true,
+//       useUnifiedTopology: true,
+//     });
+//     console.log('Connected to MongoDB');
+//   } catch (e) {
+//     console.error('Error connecting to MongoDB:', e);
+//     process.exit(1); // Exit process if connection fails
+//   }
+// };
+//
+// // Optionally: Listen to Mongoose connection events
+// mongoose.connection.on('connected', () => {
+//   console.log('Mongoose connected to DB');
+// });
+//
+// mongoose.connection.on('error', (err) => {
+//   console.error('Mongoose connection error:', err);
+//   process.exit(1); // Exit if there is a connection error
+// });
+//
+// mongoose.connection.on('disconnected', () => {
+//   console.log('Mongoose disconnected from DB');
+// });
