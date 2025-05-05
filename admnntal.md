@@ -25,3 +25,36 @@ a@a:~/Downloads/logistics-backend$ curl -X GET \
 
 a@a:~/Downloads/logistics-backend$ curl -X GET   http://localhost:5000/api/admin/orders/6806accc3b834fd7b9fdebdc/receipts   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQ1NjkxMDExLCJleHAiOjE3NDU3Nzc0MTF9.6pxwkIrfNwvw91PNi6GuFhxA24wveg-T6PETmaqVwwk"   -H "Content-Type: application/json"
 {"success":true,"data":{"orderId":"6806accc3b834fd7b9fdebdc","trackingNumber":"LG-20250421-6793C","status":"PENDING","createdAt":"2025-04-21T20:38:36.947Z","items":[{"productId":"67ed71ce455be049fb4ef4ef","storeId":{"_id":"67b7410f256d7687d08935fd"},"quantity":1,"price":111,"variantData":[],"_id":"6806accc3b834fd7b9fdebdd","store":{"storeName":"Jessica Fashion Hub","storeId":"67b7410f256d7687d08935fd","contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"}}},{"productId":"67ed5f237ff2af31bc43783a","storeId":{"_id":"67b7410f256d7687d08935fd"},"quantity":1,"price":99.99,"variantData":[],"_id":"6806accc3b834fd7b9fdebde","store":{"storeName":"Jessica Fashion Hub","storeId":"67b7410f256d7687d08935fd","contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"}}}],"deliveryDetails":{"pickupAddress":{"type":"manual","manualAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890","recipientEmail":"jessicaanavheoba@gmail.com"}},"deliveryAddress":{"street":"uniben","city":"Benin","state":"Edo","country":"Nigeria","postalCode":"+234","recipientName":"Freedom ","recipientPhone":"09032227067","recipientEmail":"Uselefreedom1@gmail.com"},"packageSize":"SMALL","isExpressDelivery":true,"estimatedDeliveryDate":"2025-04-22T20:38:36.946Z"},"paymentDetails":{"receipts":[],"priceBreakdown":{"productTotal":210.99,"deliveryFee":1000,"total":1210.99}}}}a@a:~/Downloads/logistics-backend$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+a@a:~/Downloads/logistics-backend$ curl -X GET http://localhost:5000/api/admin/stores/67b7410f256d7687d08935fd/payment-details -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQ2NDM3NzQ3LCJleHAiOjE3NDY1MjQxNDd9.1DJwjmkZKVyftWu3npqAqLUJP0qrgXvA-eX22QoOgss" -H "Content-Type: application/json"
+
+{"success":true,"data":{"storeId":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","paymentDetails":{"accountName":"Jessica Anavhe","accountNumber":"9876543210","bankName":"Zenith Bank"},"contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"}}}a@a:~/Downloads/logistics-backend$ 
+a@a:~/Downloads/logistics-backend$ 
