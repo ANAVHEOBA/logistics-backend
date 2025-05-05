@@ -40,6 +40,9 @@ const cartItemSchema = new mongoose.Schema({
     ref: 'Store',
     required: true
   },
+  storeName: {
+    type: String,
+  },
   quantity: {
     type: Number,
     required: true,
@@ -63,6 +66,7 @@ const cartItemSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
 
 const cartSchema = new mongoose.Schema({
   userId: {
@@ -90,11 +94,20 @@ const cartSchema = new mongoose.Schema({
 });
 
 // Update total price before saving
-cartSchema.pre('save', function(next) {
+cartSchema.pre('save', async function(next) {
   this.totalPrice = this.items.reduce((total, item) => {
     return total + (item.price * item.quantity);
   }, 0);
   this.updatedAt = new Date();
+
+  for (const item of this.items) {
+    if (!item.storeName && item.storeId) {
+      const store = await mongoose.model('Store').findById(item.storeId);
+      if (store) {
+        item.storeName = store.storeName;
+      }
+    }
+  }
   next();
 });
 
