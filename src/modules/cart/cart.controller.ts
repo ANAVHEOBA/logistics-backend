@@ -28,9 +28,16 @@ export class CartController {
       });
       return;
     }
+
+    // Populate store information for each item
+    const populatedCart = await Cart.populate(cart, {
+      path: 'items.storeId',
+      select: 'storeName'
+    });
+
     res.status(200).json({
       success: true,
-      data: cart
+      data: populatedCart
     });
   }
 
@@ -77,9 +84,16 @@ export class CartController {
     }
 
     await cart.save();
+    
+    // Populate store information
+    const populatedCart = await Cart.populate(cart, {
+      path: 'items.storeId',
+      select: 'storeName'
+    });
+
     res.status(200).json({
       success: true,
-      data: cart
+      data: populatedCart
     });
   }
 
@@ -113,9 +127,15 @@ export class CartController {
     cart.items[itemIndex].quantity = quantity;
     await cart.save();
 
+    // Populate store information
+    const populatedCart = await Cart.populate(cart, {
+      path: 'items.storeId',
+      select: 'storeName'
+    });
+
     res.status(200).json({
       success: true,
-      data: cart
+      data: populatedCart
     });
   }
 
@@ -132,9 +152,16 @@ export class CartController {
     );
 
     await cart.save();
+
+    // Populate store information
+    const populatedCart = await Cart.populate(cart, {
+      path: 'items.storeId',
+      select: 'storeName'
+    });
+
     res.status(200).json({
       success: true,
-      data: cart
+      data: populatedCart
     });
   }
 
@@ -147,9 +174,15 @@ export class CartController {
     cart.items = [];
     await cart.save();
 
+    // Populate store information
+    const populatedCart = await Cart.populate(cart, {
+      path: 'items.storeId',
+      select: 'storeName'
+    });
+
     res.status(200).json({
       success: true,
-      data: cart
+      data: populatedCart
     });
   }
 

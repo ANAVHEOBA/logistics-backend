@@ -352,3 +352,69 @@ a@a:~/Downloads/logistics-backend$ curl -X POST "http://localhost:5000/api/cart/
 
 a@a:~/Downloads/logistics-backend$ curl -X POST http://localhost:5000/api/cart/checkout -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lcklkIjoiNjdiZGJhNTBmY2IyNzIxOGQxNWRlYWI3IiwiZW1haWwiOiJhbmF2aGVvYmF3aXNkb21AZ21haWwuY29tIiwidHlwZSI6ImNvbnN1bWVyIiwiaWF0IjoxNzQ1MTQwNzM1LCJleHAiOjE3NDUyMjcxMzV9.7yQpPS7attZQ_vCDqH4SLme9rno1-ea5usmbr87eIpM" -H "Content-Type: application/json" -d '{"deliveryAddress":{"type":"manual","manualAddress":{"street":"123 Test Street","city":"Test City","state":"Test State","country":"Nigeria","postalCode":"12345","recipientName":"Test User","recipientPhone":"08012345678","recipientEmail":"test@example.com"}},"packageSize":"MEDIUM","isFragile":false,"isExpressDelivery":false,"requiresSpecialHandling":false,"specialInstructions":"Please handle with care","zoneId":"67cd79b5909d2026ccbca928","paymentMethod":"BANK_TRANSFER","consolidateDelivery":true}'
 {"success":true,"data":{"orders":[{"userId":"67bdba50fcb27218d15deab7","pickupAddress":{"type":"manual","manualAddress":{"street":"15 Victoria Island Road","city":"Lagos","state":"Lagos State","country":"Nigeria","postalCode":"101001","recipientName":"Jessica Fashion Hub","recipientPhone":"+2341234567890","recipientEmail":"jessicaanavheoba@gmail.com"}},"deliveryAddress":{"street":"123 Test Street","city":"Test City","state":"Test State","country":"Nigeria","postalCode":"12345","recipientName":"Test User","recipientPhone":"08012345678","recipientEmail":"test@example.com"},"packageSize":"MEDIUM","status":"PENDING","price":1221.6666666666665,"isFragile":false,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-04-23T09:29:58.749Z","items":[{"productId":"67ed71ce455be049fb4ef4ef","storeId":"67b7410f256d7687d08935fd","quantity":5,"price":111,"variantData":[],"_id":"6804be960a557b49851e081d"}],"specialInstructions":"Please handle with care","deliveryZone":"67cd79b5909d2026ccbca928","zonePrice":666.6666666666666,"_id":"6804be960a557b49851e081c","trackingNumber":"LG-20250420-864FF","estimatedWeight":20,"createdAt":"2025-04-20T09:29:58.751Z","updatedAt":"2025-04-20T09:29:58.751Z","__v":0,"paymentInstructions":{"bankDetails":{"accountName":"Default Account","accountNumber":"0123456789","bankName":"Default Bank"},"amount":1221.6666666666665,"deliveryFee":666.6666666666666,"subtotal":554.9999999999999,"currency":"NGN","instructions":"Please transfer the exact amount in Naira and use your payment reference as the transaction description."}},{"userId":"67bdba50fcb27218d15deab7","pickupAddress":{"type":"manual","manualAddress":{"street":"No 16 Ogude (Ifaka) street.","city":"Warri","state":"Delta State","country":"Nigeria","postalCode":"330103","recipientName":"GB Media","recipientPhone":"08164471007","recipientEmail":"ejovwogfreeman007@gmail.com"}},"deliveryAddress":{"street":"123 Test Street","city":"Test City","state":"Test State","country":"Nigeria","postalCode":"12345","recipientName":"Test User","recipientPhone":"08012345678","recipientEmail":"test@example.com"},"packageSize":"MEDIUM","status":"PENDING","price":4666.666666666667,"isFragile":false,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-04-23T09:29:58.737Z","items":[{"productId":"67f09d35597ca10f05ac2a21","storeId":"67c5796cba1061b59ab7fb1b","quantity":1,"price":4000,"variantData":[],"_id":"6804be960a557b49851e081a"}],"specialInstructions":"Please handle with care","deliveryZone":"67cd79b5909d2026ccbca928","zonePrice":666.6666666666666,"_id":"6804be960a557b49851e0819","trackingNumber":"LG-20250420-5A544","estimatedWeight":20,"createdAt":"2025-04-20T09:29:58.739Z","updatedAt":"2025-04-20T09:29:58.739Z","__v":0,"paymentInstructions":{"bankDetails":{"accountName":"Default Account","accountNumber":"0123456789","bankName":"Default Bank"},"amount":4666.666666666667,"deliveryFee":666.6666666666666,"subtotal":4000.0000000000005,"currency":"NGN","instructions":"Please transfer the exact amount in Naira and use your payment reference as the transaction description."}},{"userId":"67bdba50fcb27218d15deab7","pickupAddress":{"type":"manual","manualAddress":{"street":"eosodn","city":"edo","state":"benn ","country":"Nigeria","postalCode":"34567","recipientName":"Micheal store","recipientPhone":"07023904633","recipientEmail":"michealanavheoba@gmail.com"}},"deliveryAddress":{"street":"123 Test Street","city":"Test City","state":"Test State","country":"Nigeria","postalCode":"12345","recipientName":"Test User","recipientPhone":"08012345678","recipientEmail":"test@example.com"},"packageSize":"MEDIUM","status":"PENDING","price":678.6666666666666,"isFragile":false,"isExpressDelivery":false,"requiresSpecialHandling":false,"estimatedDeliveryDate":"2025-04-23T09:29:58.715Z","items":[{"productId":"67b8d0dba3244942fab43942","storeId":"67b857e9c62a9612a91952ed","quantity":1,"price":12,"variantData":[],"_id":"6804be960a557b49851e0817"}],"specialInstructions":"Please handle with care","deliveryZone":"67cd79b5909d2026ccbca928","zonePrice":666.6666666666666,"_id":"6804be960a557b49851e0816","trackingNumber":"LG-20250420-5D80B","estimatedWeight":20,"createdAt":"2025-04-20T09:29:58.719Z","updatedAt":"2025-04-20T09:29:58.719Z","__v":0,"paymentInstructions":{"bankDetails":{"accountName":"Default Account","accountNumber":"0123456789","bankName":"Default Bank"},"amount":678.6666666666666,"deliveryFee":666.6666666666666,"subtotal":12,"currency":"NGN","instructions":"Please transfer the exact amount in Naira and use your payment reference as the transaction description."}}],"totalAmount":6567,"totalDeliveryFee":2000,"totalProductPrice":4567,"currency":"NGN"}}a@a:~/Downloads/logistics-backend$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+a@a:~/Downloads/logistics-backend$ curl -X GET http://localhost:5000/api/cart \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lcklkIjoiNjdiZGJhNTBmY2IyNzIxOGQxNWRlYWI3IiwiZW1haWwiOiJhbmF2aGVvYmF3aXNkb21AZ21haWwuY29tIiwidHlwZSI6ImNvbnN1bWVyIiwiaWF0IjoxNzQ2NDQ2NDMyLCJleHAiOjE3NDY1MzI4MzJ9.CtgmnTJjD_HOUyE5Hqj-0Q6lc6IY2_cEHaD-jyV1tO0" \
+  -H "Content-Type: application/json"
+{"success":true,"data":{"_id":"67f66f80a0a1982fa474b61e","userId":"67bdba50fcb27218d15deab7","totalPrice":310.97,"items":[{"productId":"67ed71ce455be049fb4ef4ef","storeId":{"_id":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","storeUrl":"http://localhost:5000/store/undefined"},"quantity":1,"price":111,"name":"aaaa","variantData":[],"addedAt":"2025-05-05T11:34:24.598Z","_id":"6818a240e8ed07a0b48b3694"},{"productId":"67ed5f237ff2af31bc43783a","storeId":{"_id":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","storeUrl":"http://localhost:5000/store/undefined"},"quantity":1,"price":99.99,"name":"Test Product","variantData":[],"addedAt":"2025-05-05T11:34:41.895Z","_id":"6818a251e8ed07a0b48b36b9"},{"productId":"67b70692de8de32b32ce938e","storeId":null,"quantity":2,"price":49.99,"name":"Floral Summer Dress","variantData":[],"addedAt":"2025-05-05T12:02:04.559Z","_id":"6818a8bc4f434fa45bc804af"}],"createdAt":"2025-04-09T13:00:48.288Z","updatedAt":"2025-05-05T12:02:04.600Z","__v":49}}a@a:~/Downloads/logistics-backend$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+a@a:~/Downloads/logistics-backend$ curl -X POST http://localhost:5000/api/cart/items \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lcklkIjoiNjdiZGJhNTBmY2IyNzIxOGQxNWRlYWI3IiwiZW1haWwiOiJhbmF2aGVvYmF3aXNkb21AZ21haWwuY29tIiwidHlwZSI6ImNvbnN1bWVyIiwiaWF0IjoxNzQ2NDQ2NDMyLCJleHAiOjE3NDY1MzI4MzJ9.CtgmnTJjD_HOUyE5Hqj-0Q6lc6IY2_cEHaD-jyV1tO0" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productId": "67b70692de8de32b32ce938e",
+    "quantity": 2,
+    "variantData": []
+  }'
+{"success":true,"data":{"_id":"67f66f80a0a1982fa474b61e","userId":"67bdba50fcb27218d15deab7","totalPrice":310.97,"items":[{"productId":"67ed71ce455be049fb4ef4ef","storeId":{"_id":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","storeUrl":"http://localhost:5000/store/undefined"},"quantity":1,"price":111,"name":"aaaa","variantData":[],"addedAt":"2025-05-05T11:34:24.598Z","_id":"6818a240e8ed07a0b48b3694"},{"productId":"67ed5f237ff2af31bc43783a","storeId":{"_id":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","storeUrl":"http://localhost:5000/store/undefined"},"quantity":1,"price":99.99,"name":"Test Product","variantData":[],"addedAt":"2025-05-05T11:34:41.895Z","_id":"6818a251e8ed07a0b48b36b9"},{"productId":"67b70692de8de32b32ce938e","storeId":null,"quantity":2,"price":49.99,"name":"Floral Summer Dress","variantData":[],"addedAt":"2025-05-05T12:02:04.559Z","_id":"6818a8bc4f434fa45bc804af"}],"createdAt":"2025-04-09T13:00:48.288Z","updatedAt":"2025-05-05T12:02:04.600Z","__v":49}}a@a:~/Downloads/logistics-backend$ 
