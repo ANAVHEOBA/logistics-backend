@@ -111,8 +111,8 @@ export class StoreCrud {
     filter = {},
     page = 1,
     limit = 10,
-    sortBy = 'createdAt',
-    sortOrder = 'desc',
+    sortBy = 'displayOrder',
+    sortOrder = 'asc',
     city,
     state,
     country,
@@ -144,22 +144,20 @@ export class StoreCrud {
       finalFilter['metrics.averageRating'] = { $gte: Number(minRating) };
     }
 
-    const stores = await Store
-      .find(finalFilter)
+    // Get all stores that match the filter
+    const stores = await Store.find(finalFilter)
       .sort(sort)
       .skip(skip)
-      .limit(limit)
-      .select('-userId -settings.privateData');
+      .limit(limit);
 
     const total = await Store.countDocuments(finalFilter);
-    const totalPages = Math.ceil(total / limit);
 
     return {
       stores,
       pagination: {
         total,
         page,
-        totalPages,
+        totalPages: Math.ceil(total / limit),
         hasMore: page * limit < total
       }
     };
@@ -779,5 +777,31 @@ export class StoreCrud {
       console.error('Get store full data error:', error);
       throw error;
     }
+  }
+
+  // Add new method for bulk update
+  async bulkUpdateStoreOrder(updates: Array<{ storeId: string; displayOrder: number }>): Promise<void> {
+    const bulkOps = updates.map(update => ({
+      updateOne: {
+        filter: { _id: new mongoose.Types.ObjectId(update.storeId) },
+        update: { $set: { displayOrder: update.displayOrder } }
+      }
+    }));
+
+    await Store.bulkWrite(bulkOps);
+  }
+
+  // Add new method for updating store order
+  async updateStoreOrder(storeId: string, orderData: {
+    displayOrder?: number;
+    isFeatured?: boolean;
+    featuredUntil?: Date;
+    adminNotes?: string;
+  }): Promise<IStore | null> {
+    return await Store.findByIdAndUpdate(
+      storeId,
+      { $set: orderData },
+      { new: true }
+    );
   }
 } 

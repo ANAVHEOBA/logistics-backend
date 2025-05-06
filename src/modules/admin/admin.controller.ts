@@ -1140,4 +1140,67 @@ export class AdminController {
       });
     }
   };
+
+
+updateStoreOrder = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { storeId } = req.params;
+    const { displayOrder, isFeatured, featuredUntil, adminNotes } = req.body;
+
+    const store = await this.storeCrud.updateStoreOrder(storeId, {
+      displayOrder,
+      isFeatured,
+      featuredUntil,
+      adminNotes
+    });
+
+    if (!store) {
+      res.status(404).json({
+        success: false,
+        message: 'Store not found'
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: store
+    });
+  } catch (error) {
+    console.error('Update store order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update store order'
+    });
+  }
+};
+
+bulkUpdateStoreOrder = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { stores } = req.body; // Array of { storeId, displayOrder }
+    
+    if (!Array.isArray(stores)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid request format. Expected array of stores'
+      });
+      return;
+    }
+
+    await this.storeCrud.bulkUpdateStoreOrder(stores);
+
+    res.status(200).json({
+      success: true,
+      message: 'Store order updated successfully'
+    });
+  } catch (error) {
+    console.error('Bulk update store order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update store order'
+    });
+  }
+};
+
+
 }

@@ -59,6 +59,10 @@ export interface IStore extends Document {
     accountNumber: string;
     bankName: string;
   };
+  displayOrder: number;
+  isFeatured: boolean;
+  featuredUntil?: Date;
+  adminNotes?: string;
 }
 
 export enum StoreCategory {
@@ -241,6 +245,20 @@ const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>({
     unique: true,
     lowercase: true,
     trim: true
+  },
+  displayOrder: {
+    type: Number,
+    default: 0
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
+  },
+  featuredUntil: {
+    type: Date
+  },
+  adminNotes: {
+    type: String
   }
 }, {
   timestamps: true
