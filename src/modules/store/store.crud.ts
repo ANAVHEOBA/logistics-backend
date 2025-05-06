@@ -119,8 +119,6 @@ export class StoreCrud {
     minRating
   }: ListStoresParams): Promise<StoreListResponse> {
     const skip = (page - 1) * limit;
-    const sort: Record<string, 1 | -1> = {};
-    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
     // Combine with existing filter
     const finalFilter: Record<string, any> = {
@@ -146,7 +144,12 @@ export class StoreCrud {
 
     // Get all stores that match the filter
     const stores = await Store.find(finalFilter)
-      .sort(sort)
+      .sort({
+        isFeatured: -1, // Featured stores first
+        displayOrder: 1, // Then by display order
+        createdAt: -1 // Then by creation date
+      })
+      .collation({ locale: "en_US", numericOrdering: true }) // Enable numeric ordering
       .skip(skip)
       .limit(limit);
 
@@ -197,8 +200,6 @@ export class StoreCrud {
     maxRevenue?: number;
   }) {
     const skip = (page - 1) * limit;
-    const sort: Record<string, 1 | -1> = {};
-    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
     // Combine with existing filter
     const finalFilter: Record<string, any> = { ...filter };
@@ -234,10 +235,14 @@ export class StoreCrud {
 
     const stores = await Store
       .find(finalFilter)
-      .sort(sort)
+      .sort({
+        isFeatured: -1, // Featured stores first
+        displayOrder: 1, // Then by display order
+        createdAt: -1 // Then by creation date
+      })
       .skip(skip)
       .limit(limit)
-      .populate('userId', 'firstName lastName email'); // Optionally populate user details
+      .populate('userId', 'email firstName lastName');
 
     const total = await Store.countDocuments(finalFilter);
 
