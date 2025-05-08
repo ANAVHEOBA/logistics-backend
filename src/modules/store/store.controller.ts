@@ -9,7 +9,7 @@ import { ICreateGuestOrderRequest } from '../order/order.model';
 import mongoose from 'mongoose';
 import { AddressCrud } from '../address/address.crud';
 import { ICreateAddressRequest } from '../address/address.model';
-import { PaginationOptions, PaginatedResponse, StoreOrder } from './store.types';
+import { PaginationOptions, PaginatedResponse, StoreOrder, RevenueOptions } from './store.types';
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 
@@ -944,26 +944,22 @@ export class StoreController {
         return;
       }
 
-      // Get basic revenue stats
-      const revenue = await this.storeCrud.getStoreRevenue(store._id.toString());
-
-      // If detailed analysis is requested
+      // Get date range from query params if provided
       const { startDate, endDate } = req.query;
-      let detailedRevenue;
-      if (startDate && endDate) {
-        detailedRevenue = await this.storeCrud.getDetailedRevenue(
-          store._id.toString(),
-          new Date(startDate as string),
-          new Date(endDate as string)
-        );
+      const options: RevenueOptions = {};
+      
+      if (startDate) {
+        options.startDate = new Date(startDate as string);
       }
+      if (endDate) {
+        options.endDate = new Date(endDate as string);
+      }
+
+      const revenue = await this.storeCrud.getStoreRevenue(store._id.toString(), options);
 
       res.status(200).json({
         success: true,
-        data: {
-          summary: revenue,
-          details: detailedRevenue
-        }
+        data: revenue
       });
     } catch (error) {
       console.error('Get store revenue error:', error);
@@ -1293,9 +1289,6 @@ export class StoreController {
       });
     }
   };
-
-
-
 
   //set up a store method
 

@@ -8,7 +8,9 @@ import {
   StoreOrder,
   StoreCustomer,
   RevenueOptions,
-  StoreListResponse
+  StoreListResponse,
+  RevenueStats,
+  RevenueBreakdown
 } from './store.types';
 import { OrderStatus } from '../order/order.model';
 
@@ -386,19 +388,11 @@ export class StoreCrud {
     );
   }
 
-  async getStoreRevenue(storeId: string, options?: RevenueOptions) {
+  async getStoreRevenue(storeId: string, options?: RevenueOptions): Promise<RevenueStats> {
     try {
       const matchStage: any = {
         'items.storeId': new mongoose.Types.ObjectId(storeId),
-        status: { 
-          $in: [
-            'CONFIRMED',
-            'READY_FOR_PICKUP',
-            'PICKED_UP',
-            'IN_TRANSIT',
-            'DELIVERED'
-          ]
-        }
+        status: 'DELIVERED'  // Only include DELIVERED orders
       };
 
       // Add date filters if provided
@@ -412,6 +406,15 @@ export class StoreCrud {
         }
       }
 
+      // Get current date and calculate previous periods
+      const now = new Date();
+      const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const currentWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      const previousWeek = new Date(now.setDate(now.getDate() - 7));
+      const currentDay = new Date(now.setHours(0, 0, 0, 0));
+      const previousDay = new Date(now.setDate(now.getDate() - 1));
+
       const result = await OrderSchema.aggregate([
         { $match: matchStage },
         { $unwind: '$items' },
@@ -421,42 +424,201 @@ export class StoreCrud {
           }
         },
         {
+          $facet: {
+            // Total revenue
+            total: [
+        {
           $group: {
-            _id: {
-              date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
-            },
-            dailyAmount: { 
-              $sum: { $multiply: ['$items.price', '$items.quantity'] }
+                  _id: null,
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
+              }
+            ],
+            // Current month revenue
+            currentMonth: [
+              {
+                $match: {
+                  createdAt: { $gte: currentMonth }
+                }
+              },
+              {
+                $group: {
+                  _id: null,
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
+              }
+            ],
+            // Previous month revenue
+            previousMonth: [
+              {
+                $match: {
+                  createdAt: { 
+                    $gte: previousMonth,
+                    $lt: currentMonth
             }
           }
         },
         {
           $group: {
             _id: null,
-            totalRevenue: { $sum: '$dailyAmount' },
-            dailyRevenue: {
-              $push: {
-                date: '$_id.date',
-                amount: '$dailyAmount'
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
               }
-            }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            totalRevenue: 1,
-            dailyRevenue: {
-              $sortArray: {
-                input: '$dailyRevenue',
-                sortBy: { date: 1 }
+            ],
+            // Current week revenue
+            currentWeek: [
+              {
+                $match: {
+                  createdAt: { $gte: currentWeek }
+                }
+              },
+              {
+                $group: {
+                  _id: null,
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
               }
-            }
+            ],
+            // Previous week revenue
+            previousWeek: [
+              {
+                $match: {
+                  createdAt: { 
+                    $gte: previousWeek,
+                    $lt: currentWeek
+                  }
+                }
+              },
+              {
+                $group: {
+                  _id: null,
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
+              }
+            ],
+            // Current day revenue
+            currentDay: [
+              {
+                $match: {
+                  createdAt: { $gte: currentDay }
+                }
+              },
+              {
+                $group: {
+                  _id: null,
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
+              }
+            ],
+            // Previous day revenue
+            previousDay: [
+              {
+                $match: {
+                  createdAt: { 
+                    $gte: previousDay,
+                    $lt: currentDay
+                  }
+                }
+              },
+              {
+                $group: {
+                  _id: null,
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
+              }
+            ],
+            // Monthly breakdown
+            monthlyBreakdown: [
+              {
+                $group: {
+                  _id: {
+                    year: { $year: '$createdAt' },
+                    month: { $month: '$createdAt' }
+                  },
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
+              },
+              {
+                $sort: { '_id.year': 1, '_id.month': 1 }
+              }
+            ],
+            // Weekly breakdown
+            weeklyBreakdown: [
+              {
+                $group: {
+                  _id: {
+                    year: { $year: '$createdAt' },
+                    week: { $week: '$createdAt' }
+                  },
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
+              },
+              {
+                $sort: { '_id.year': 1, '_id.week': 1 }
+              }
+            ],
+            // Daily breakdown
+            dailyBreakdown: [
+              {
+                $group: {
+                  _id: {
+                    date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                  },
+                  amount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                  orders: { $sum: 1 }
+                }
+              },
+              {
+                $sort: { '_id.date': 1 }
+              }
+            ]
           }
         }
       ]);
 
-      return result[0] || { totalRevenue: 0, dailyRevenue: [] };
+      const stats = result[0];
+
+      return {
+        total: stats.total[0] || { amount: 0, orders: 0 },
+        monthly: {
+          current: stats.currentMonth[0] || { amount: 0, orders: 0 },
+          previous: stats.previousMonth[0] || { amount: 0, orders: 0 }
+        },
+        weekly: {
+          current: stats.currentWeek[0] || { amount: 0, orders: 0 },
+          previous: stats.previousWeek[0] || { amount: 0, orders: 0 }
+        },
+        daily: {
+          current: stats.currentDay[0] || { amount: 0, orders: 0 },
+          previous: stats.previousDay[0] || { amount: 0, orders: 0 }
+        },
+        breakdown: {
+          monthly: stats.monthlyBreakdown.map((item: { _id: { year: number; month: number }; amount: number; orders: number }) => ({
+            month: `${item._id.year}-${item._id.month}`,
+            amount: item.amount,
+            orders: item.orders
+          })),
+          weekly: stats.weeklyBreakdown.map((item: { _id: { year: number; week: number }; amount: number; orders: number }) => ({
+            week: `${item._id.year}-W${item._id.week}`,
+            amount: item.amount,
+            orders: item.orders
+          })),
+          daily: stats.dailyBreakdown.map((item: { _id: { date: string }; amount: number; orders: number }) => ({
+            date: item._id.date,
+            amount: item.amount,
+            orders: item.orders
+          }))
+        }
+      };
     } catch (error) {
       console.error('Get store revenue error:', error);
       throw error;
@@ -739,7 +901,7 @@ export class StoreCrud {
       const updatedStore = await Store.findByIdAndUpdate(storeId, {
         $set: {
           'metrics.totalOrders': orderStats.totalOrders,
-          'metrics.totalRevenue': revenue.totalRevenue || 0
+          'metrics.totalRevenue': revenue.total.amount || 0
         }
       }, { new: true });
 
@@ -747,7 +909,7 @@ export class StoreCrud {
         metrics: {
           totalOrders: orderStats.totalOrders,
           totalProducts: store?.metrics?.totalProducts || 0,
-          totalRevenue: revenue.totalRevenue || 0
+          totalRevenue: revenue.total.amount || 0
         },
         _id: storeId,
         storeUrl: updatedStore?.getStoreUrl()
