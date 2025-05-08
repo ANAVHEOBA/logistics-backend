@@ -12,6 +12,9 @@ router.post('/login', adminController.login);
 // Protected admin routes
 router.use(adminMiddleware);
 
+// Add FCM token update route
+router.post('/fcm-token', adminController.updateFcmToken);
+
 // User routes
 router.get('/users', adminController.getAllUsers);
 router.get('/users/:userId', adminController.getUserById);

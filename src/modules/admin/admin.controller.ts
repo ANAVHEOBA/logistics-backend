@@ -1141,66 +1141,108 @@ export class AdminController {
     }
   };
 
+  updateStoreOrder = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+      const { displayOrder, isFeatured, featuredUntil, adminNotes } = req.body;
 
-updateStoreOrder = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { storeId } = req.params;
-    const { displayOrder, isFeatured, featuredUntil, adminNotes } = req.body;
-
-    const store = await this.storeCrud.updateStoreOrder(storeId, {
-      displayOrder,
-      isFeatured,
-      featuredUntil,
-      adminNotes
-    });
-
-    if (!store) {
-      res.status(404).json({
-        success: false,
-        message: 'Store not found'
+      const store = await this.storeCrud.updateStoreOrder(storeId, {
+        displayOrder,
+        isFeatured,
+        featuredUntil,
+        adminNotes
       });
-      return;
-    }
 
-    res.status(200).json({
-      success: true,
-      data: store
-    });
-  } catch (error) {
-    console.error('Update store order error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update store order'
-    });
-  }
-};
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
 
-bulkUpdateStoreOrder = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { stores } = req.body; // Array of { storeId, displayOrder }
-    
-    if (!Array.isArray(stores)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid request format. Expected array of stores'
+      res.status(200).json({
+        success: true,
+        data: store
       });
-      return;
+    } catch (error) {
+      console.error('Update store order error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update store order'
+      });
     }
+  };
 
-    await this.storeCrud.bulkUpdateStoreOrder(stores);
+  bulkUpdateStoreOrder = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { stores } = req.body; // Array of { storeId, displayOrder }
+      
+      if (!Array.isArray(stores)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid request format. Expected array of stores'
+        });
+        return;
+      }
 
-    res.status(200).json({
-      success: true,
-      message: 'Store order updated successfully'
-    });
-  } catch (error) {
-    console.error('Bulk update store order error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update store order'
-    });
-  }
-};
+      await this.storeCrud.bulkUpdateStoreOrder(stores);
 
+      res.status(200).json({
+        success: true,
+        message: 'Store order updated successfully'
+      });
+    } catch (error) {
+      console.error('Bulk update store order error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update store order'
+      });
+    }
+  };
 
+  updateFcmToken = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const adminId = req.admin!.adminId;
+      const { fcmToken } = req.body;
+
+      if (!fcmToken) {
+        res.status(400).json({
+          success: false,
+          message: 'FCM token is required'
+        });
+        return;
+      }
+
+      // Basic token validation (should be a non-empty string)
+      if (typeof fcmToken !== 'string' || fcmToken.trim().length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid FCM token format'
+        });
+        return;
+      }
+
+      const admin = await this.adminCrud.updateFcmToken(adminId, fcmToken);
+      
+      if (!admin) {
+        res.status(404).json({
+          success: false,
+          message: 'Admin not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'FCM token updated successfully'
+      });
+    } catch (error) {
+      console.error('Update FCM token error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update FCM token'
+      });
+    }
+  };
 }
