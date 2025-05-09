@@ -120,7 +120,7 @@ export class EmailService {
   constructor() {
     if (!EmailService.transporter) {
       EmailService.transporter = nodemailer.createTransport({
-        host: 'mail.gofroma2zafrica.com',
+        host: 'gofroma2zafrica.com',
         port: 587,
         secure: false,
         auth: {
