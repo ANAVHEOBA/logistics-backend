@@ -17,9 +17,9 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   baseUrl: process.env.BASE_URL || 'http://localhost:5000',
   email: {
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    host: 'mail.gofroma2zafrica.com',
+    port: 587,
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD

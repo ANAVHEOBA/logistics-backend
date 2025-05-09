@@ -4,7 +4,9 @@ import { sendEmail } from '../services/email.service';
 
 // Create reusable transporter object using Gmail
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'mail.gofroma2zafrica.com',
+  port: 587,
+  secure: false,
   auth: {
     user: config.email.auth.user,
     pass: config.email.auth.pass
