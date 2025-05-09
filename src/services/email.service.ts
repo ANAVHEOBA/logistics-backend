@@ -9,6 +9,111 @@ interface IEmailRecipient {
   name: string;
 }
 
+const emailStyles = `
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #000000;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #000000;
+      color: #FFD700;
+      padding: 30px;
+      text-align: center;
+      border-radius: 5px 5px 0 0;
+      border-bottom: 3px solid #FFD700;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .content {
+      background-color: #ffffff;
+      padding: 30px;
+      border: 1px solid #FFD700;
+      border-radius: 0 0 5px 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 12px;
+      border-top: 1px solid #FFD700;
+      margin-top: 20px;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 25px;
+      background-color: #000000;
+      color: #FFD700;
+      text-decoration: none;
+      border-radius: 5px;
+      margin: 20px 0;
+      border: 2px solid #FFD700;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+    }
+    .button:hover {
+      background-color: #FFD700;
+      color: #000000;
+    }
+    .details {
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 5px;
+      margin: 20px 0;
+      border: 1px solid #FFD700;
+    }
+    .details h3 {
+      color: #000000;
+      margin-top: 0;
+      border-bottom: 2px solid #FFD700;
+      padding-bottom: 10px;
+    }
+    .status {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 3px;
+      font-weight: bold;
+      color: #000000;
+    }
+    .status-pending { background-color: #FFD700; }
+    .status-confirmed { background-color: #FFD700; }
+    .status-cancelled { background-color: #FFD700; }
+    .status-delivered { background-color: #FFD700; }
+    .price {
+      color: #000000;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .tracking-number {
+      background-color: #000000;
+      color: #FFD700;
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    .highlight {
+      color: #FFD700;
+      font-weight: bold;
+    }
+  </style>
+`;
+
 export class EmailService {
   private static transporter: nodemailer.Transporter;
 
@@ -26,7 +131,6 @@ export class EmailService {
         logger: true
       });
 
-      // Verify connection configuration
       EmailService.transporter.verify((error, success) => {
         if (error) {
           console.error('Email configuration error:', error);
@@ -37,13 +141,12 @@ export class EmailService {
     }
   }
 
-  // Add generic send email method
   static async sendEmail(to: string, subject: string, html: string): Promise<void> {
     const mailOptions = {
       from: `${config.email.auth.user}`,
       to,
       subject,
-      html
+      html: `${emailStyles}${html}`
     };
 
     try {
@@ -67,63 +170,63 @@ export class EmailService {
     const message = statusMessages[order.status] || 'Your order status has been updated.';
     const additionalNotes = order.statusNotes ? `<p><strong>Additional Notes:</strong> ${order.statusNotes}</p>` : '';
 
-    const mailOptions = {
-      from: `${config.email.auth.user}`,
-      to: user.email,
-      subject: `Order Status Update - ${order.trackingNumber}`,
-      html: `
-        <h2>Order Status Update</h2>
-        <p>Hello ${user.name},</p>
-        <p>${message}</p>
-        ${additionalNotes}
-        <p><strong>Order Details:</strong></p>
-        <ul>
-          <li>Tracking Number: ${order.trackingNumber}</li>
-          <li>Status: ${order.status}</li>
-          <li>Estimated Delivery: ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</li>
-        </ul>
-        <p>Track your order using your tracking number: ${order.trackingNumber}</p>
-        <p>Thank you for using our service!</p>
-      `
-    };
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Order Status Update</h1>
+        </div>
+        <div class="content">
+          <p>Hello <span class="highlight">${user.name}</span>,</p>
+          <p>${message}</p>
+          ${additionalNotes}
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Status:</strong> <span class="status status-${order.status.toLowerCase()}">${order.status}</span></p>
+            <p><strong>Estimated Delivery:</strong> ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+          </div>
+          <a href="${process.env.FRONTEND_URL}/track/${order.trackingNumber}" class="button">Track Your Order</a>
+        </div>
+        <div class="footer">
+          <p>Thank you for using our service!</p>
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
 
-    try {
-      await EmailService.transporter.sendMail(mailOptions);
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      throw error;
-    }
+    await EmailService.sendEmail(user.email, `Order Status Update - ${order.trackingNumber}`, html);
   }
 
   async sendOrderConfirmation(user: IUser, order: IOrder): Promise<void> {
-    const mailOptions = {
-      from: `${config.email.auth.user}`,
-      to: user.email,
-      subject: `Order Confirmation - ${order.trackingNumber}`,
-      html: `
-        <h2>Order Confirmation</h2>
-        <p>Hello ${user.name},</p>
-        <p>Your order has been successfully placed!</p>
-        <p><strong>Order Details:</strong></p>
-        <ul>
-          <li>Tracking Number: ${order.trackingNumber}</li>
-          <li>Package Size: ${order.packageSize}</li>
-          <li>Price: ₦${order.price}</li>
-          <li>Estimated Delivery: ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</li>
-        </ul>
-        <p><strong>Delivery Address:</strong></p>
-        <p>${this.formatAddress(order.deliveryAddress)}</p>
-        <p>You can track your order using your tracking number: ${order.trackingNumber}</p>
-        <p>Thank you for choosing our service!</p>
-      `
-    };
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Order Confirmation</h1>
+        </div>
+        <div class="content">
+          <p>Hello <span class="highlight">${user.name}</span>,</p>
+          <p>Your order has been successfully placed!</p>
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Package Size:</strong> ${order.packageSize}</p>
+            <p><strong>Price:</strong> <span class="price">₦${order.price}</span></p>
+            <p><strong>Estimated Delivery:</strong> ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+          </div>
+          <div class="details">
+            <h3>Delivery Address</h3>
+            <p>${this.formatAddress(order.deliveryAddress)}</p>
+          </div>
+          <a href="${process.env.FRONTEND_URL}/track/${order.trackingNumber}" class="button">Track Your Order</a>
+        </div>
+        <div class="footer">
+          <p>Thank you for choosing our service!</p>
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
 
-    try {
-      await EmailService.transporter.sendMail(mailOptions);
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      throw error;
-    }
+    await EmailService.sendEmail(user.email, `Order Confirmation - ${order.trackingNumber}`, html);
   }
 
   private formatAddress(address: any): string {
@@ -132,15 +235,13 @@ export class EmailService {
     }
     
     return `
-      ${address.street},
-      ${address.city},
-      ${address.state},
-      ${address.country},
-      ${address.postalCode}
-      <br>
-      Recipient: ${address.recipientName}
-      <br>
-      Phone: ${address.recipientPhone}
+      ${address.street},<br>
+      ${address.city},<br>
+      ${address.state},<br>
+      ${address.country},<br>
+      ${address.postalCode}<br>
+      <strong>Recipient:</strong> ${address.recipientName}<br>
+      <strong>Phone:</strong> ${address.recipientPhone}
     `;
   }
 
@@ -149,127 +250,127 @@ export class EmailService {
     order: IOrder, 
     items: IOrderItemResponse[]
   ): Promise<void> {
-    const mailOptions = {
-      from: `${config.email.auth.user}`,
-      to: storeEmail,
-      subject: `New Order Received - ${order.trackingNumber}`,
-      html: `
-        <h2>New Order Received</h2>
-        <p>You have received a new order!</p>
-        <p><strong>Order Details:</strong></p>
-        <ul>
-          <li>Order ID: ${order._id}</li>
-          <li>Tracking Number: ${order.trackingNumber}</li>
-          <li>Status: ${order.status}</li>
-        </ul>
-        <p><strong>Items:</strong></p>
-        <ul>
-          ${items.map(item => `
-            <li>
-              Product ID: ${item.productId}<br>
-              Quantity: ${item.quantity}<br>
-              Price: ₦${item.price}
-            </li>
-          `).join('')}
-        </ul>
-        <p>Please prepare these items for pickup.</p>
-      `
-    };
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>New Order Received</h1>
+        </div>
+        <div class="content">
+          <p>You have received a new order!</p>
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Order ID:</strong> ${order._id}</p>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Status:</strong> <span class="status status-${order.status.toLowerCase()}">${order.status}</span></p>
+          </div>
+          <div class="details">
+            <h3>Items</h3>
+            ${items.map(item => `
+              <div style="margin-bottom: 10px; padding: 10px; border-bottom: 1px solid #FFD700;">
+                <p><strong>Product ID:</strong> ${item.productId}</p>
+                <p><strong>Quantity:</strong> ${item.quantity}</p>
+                <p><strong>Price:</strong> <span class="price">₦${item.price}</span></p>
+              </div>
+            `).join('')}
+          </div>
+          <p>Please prepare these items for pickup.</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
 
-    try {
-      await EmailService.transporter.sendMail(mailOptions);
-    } catch (error) {
-      console.error('Failed to send store notification:', error);
-      throw error;
-    }
+    await EmailService.sendEmail(storeEmail, `New Order Received - ${order.trackingNumber}`, html);
   }
 
   async sendDeliveryConfirmation(user: IUser, order: IOrder): Promise<void> {
-    const mailOptions = {
-      from: `${config.email.auth.user}`,
-      to: user.email,
-      subject: `Delivery Confirmation - ${order.trackingNumber}`,
-      html: `
-        <h2>Delivery Confirmation</h2>
-        <p>Hello ${user.name},</p>
-        <p>Your order has been successfully delivered!</p>
-        <p><strong>Order Details:</strong></p>
-        <ul>
-          <li>Tracking Number: ${order.trackingNumber}</li>
-          <li>Delivery Date: ${new Date(order.deliveryDate!).toLocaleDateString()}</li>
-        </ul>
-        <p>Thank you for using our service! We hope you enjoyed your experience.</p>
-        <p>If you have any feedback, please don't hesitate to contact us.</p>
-      `
-    };
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Delivery Confirmation</h1>
+        </div>
+        <div class="content">
+          <p>Hello <span class="highlight">${user.name}</span>,</p>
+          <p>Your order has been successfully delivered!</p>
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Delivery Date:</strong> ${new Date(order.deliveryDate!).toLocaleDateString()}</p>
+          </div>
+          <p>Thank you for using our service! We hope you enjoyed your experience.</p>
+          <p>If you have any feedback, please don't hesitate to contact us.</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
 
-    try {
-      await EmailService.transporter.sendMail(mailOptions);
-    } catch (error) {
-      console.error('Failed to send delivery confirmation:', error);
-      throw error;
-    }
+    await EmailService.sendEmail(user.email, `Delivery Confirmation - ${order.trackingNumber}`, html);
   }
 
   async sendGuestOrderConfirmation(email: string, order: IOrder): Promise<void> {
-    const mailOptions = {
-      from: `${config.email.auth.user}`,
-      to: email,
-      subject: `Order Confirmation - ${order.trackingNumber}`,
-      html: `
-        <h2>Order Confirmation</h2>
-        <p>Thank you for your order!</p>
-        <p><strong>Order Details:</strong></p>
-        <ul>
-          <li>Tracking Number: ${order.trackingNumber}</li>
-          <li>Package Size: ${order.packageSize}</li>
-          <li>Price: ₦${order.price}</li>
-          <li>Estimated Delivery: ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</li>
-        </ul>
-        <p><strong>Delivery Address:</strong></p>
-        <p>${this.formatAddress(order.deliveryAddress)}</p>
-        <p>Track your order at: ${process.env.FRONTEND_URL}/track/${order.trackingNumber}</p>
-        <p>Thank you for choosing our service!</p>
-      `
-    };
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Order Confirmation</h1>
+        </div>
+        <div class="content">
+          <p>Thank you for your order!</p>
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Package Size:</strong> ${order.packageSize}</p>
+            <p><strong>Price:</strong> <span class="price">₦${order.price}</span></p>
+            <p><strong>Estimated Delivery:</strong> ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+          </div>
+          <div class="details">
+            <h3>Delivery Address</h3>
+            <p>${this.formatAddress(order.deliveryAddress)}</p>
+          </div>
+          <a href="${process.env.FRONTEND_URL}/track/${order.trackingNumber}" class="button">Track Your Order</a>
+        </div>
+        <div class="footer">
+          <p>Thank you for choosing our service!</p>
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
 
-    try {
-      await EmailService.transporter.sendMail(mailOptions);
-    } catch (error) {
-      console.error('Failed to send guest order confirmation:', error);
-      throw error;
-    }
+    await EmailService.sendEmail(email, `Order Confirmation - ${order.trackingNumber}`, html);
   }
 
   async sendConsumerOrderConfirmation(recipient: IEmailRecipient, order: IOrder): Promise<void> {
-    const mailOptions = {
-      from: `${config.email.auth.user}`,
-      to: recipient.email,
-      subject: `Order Confirmation - ${order.trackingNumber}`,
-      html: `
-        <h2>Order Confirmation</h2>
-        <p>Hello ${recipient.name},</p>
-        <p>Your order has been successfully placed!</p>
-        <p><strong>Order Details:</strong></p>
-        <ul>
-          <li>Tracking Number: ${order.trackingNumber}</li>
-          <li>Package Size: ${order.packageSize}</li>
-          <li>Price: ₦${order.price}</li>
-          <li>Estimated Delivery: ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</li>
-        </ul>
-        <p><strong>Delivery Address:</strong></p>
-        <p>${this.formatAddress(order.deliveryAddress)}</p>
-        <p>You can track your order using your tracking number: ${order.trackingNumber}</p>
-        <p>Thank you for choosing our service!</p>
-      `
-    };
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Order Confirmation</h1>
+        </div>
+        <div class="content">
+          <p>Hello <span class="highlight">${recipient.name}</span>,</p>
+          <p>Your order has been successfully placed!</p>
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Package Size:</strong> ${order.packageSize}</p>
+            <p><strong>Price:</strong> <span class="price">₦${order.price}</span></p>
+            <p><strong>Estimated Delivery:</strong> ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+          </div>
+          <div class="details">
+            <h3>Delivery Address</h3>
+            <p>${this.formatAddress(order.deliveryAddress)}</p>
+          </div>
+          <a href="${process.env.FRONTEND_URL}/track/${order.trackingNumber}" class="button">Track Your Order</a>
+        </div>
+        <div class="footer">
+          <p>Thank you for choosing our service!</p>
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
 
-    try {
-      await EmailService.transporter.sendMail(mailOptions);
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      throw error;
-    }
+    await EmailService.sendEmail(recipient.email, `Order Confirmation - ${order.trackingNumber}`, html);
   }
 
   async sendConsumerOrderStatusUpdate(
@@ -290,32 +391,31 @@ export class EmailService {
     const message = statusMessages[order.status] || 'Your order status has been updated.';
     const additionalNotes = notes ? `<p><strong>Additional Notes:</strong> ${notes}</p>` : '';
 
-    const mailOptions = {
-      from: `${config.email.auth.user}`,
-      to: consumer.email,
-      subject: `Order Status Update - ${order.trackingNumber}`,
-      html: `
-        <h2>Order Status Update</h2>
-        <p>Hello ${consumer.firstName},</p>
-        <p>${message}</p>
-        ${additionalNotes}
-        <p><strong>Order Details:</strong></p>
-        <ul>
-          <li>Tracking Number: ${order.trackingNumber}</li>
-          <li>Status: ${order.status}</li>
-          <li>Estimated Delivery: ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</li>
-        </ul>
-        <p>Track your order at: ${process.env.FRONTEND_URL}/track/${order.trackingNumber}</p>
-        <p>Thank you for using our service!</p>
-      `
-    };
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Order Status Update</h1>
+        </div>
+        <div class="content">
+          <p>Hello <span class="highlight">${consumer.firstName}</span>,</p>
+          <p>${message}</p>
+          ${additionalNotes}
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Status:</strong> <span class="status status-${order.status.toLowerCase()}">${order.status}</span></p>
+            <p><strong>Estimated Delivery:</strong> ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+          </div>
+          <a href="${process.env.FRONTEND_URL}/track/${order.trackingNumber}" class="button">Track Your Order</a>
+        </div>
+        <div class="footer">
+          <p>Thank you for using our service!</p>
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
 
-    try {
-      await EmailService.transporter.sendMail(mailOptions);
-    } catch (error) {
-      console.error('Failed to send status update email:', error);
-      throw error;
-    }
+    await EmailService.sendEmail(consumer.email, `Order Status Update - ${order.trackingNumber}`, html);
   }
 
   async sendPaymentVerificationEmail(
@@ -326,38 +426,50 @@ export class EmailService {
   ): Promise<void> {
     const subject = `Payment ${verified ? 'Verified' : 'Rejected'}`;
     const html = `
-      <h2>Payment ${verified ? 'Verified' : 'Rejected'}</h2>
-      <p>Dear ${consumer.firstName},</p>
-      <p>Your payment for order ${order.trackingNumber} has been ${verified ? 'verified' : 'rejected'}.</p>
-      ${notes ? `<p><strong>Admin Notes:</strong> ${notes}</p>` : ''}
-      <p>Thank you for using our service.</p>
+      <div class="container">
+        <div class="header" style="background-color: ${verified ? '#000000' : '#000000'}">
+          <h1>Payment ${verified ? 'Verified' : 'Rejected'}</h1>
+        </div>
+        <div class="content">
+          <p>Dear <span class="highlight">${consumer.firstName}</span>,</p>
+          <p>Your payment for order <span class="tracking-number">${order.trackingNumber}</span> has been ${verified ? 'verified' : 'rejected'}.</p>
+          ${notes ? `<div class="details"><p><strong>Admin Notes:</strong> ${notes}</p></div>` : ''}
+          <a href="${process.env.FRONTEND_URL}/track/${order.trackingNumber}" class="button">View Order Details</a>
+        </div>
+        <div class="footer">
+          <p>Thank you for using our service.</p>
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
     `;
 
     await EmailService.sendEmail(consumer.email, subject, html);
   }
 
   async sendPaymentNotification(order: any): Promise<void> {
-    const emailData = {
-      to: 'wisdomabraham92@gmail.com', // Updated admin email
-      subject: `New Payment Notification - Order #${order.trackingNumber}`,
-      html: `
-        <h2>New Payment Notification</h2>
-        <p>New payment has been marked for Order #${order.trackingNumber}</p>
-        <p><strong>Details:</strong></p>
-        <ul>
-          <li>Amount: ₦${order.paymentAmount}</li>
-          <li>Reference: ${order.paymentReference}</li>
-          <li>Customer: ${order.userId.firstName} ${order.userId.lastName}</li>
-        </ul>
-        <p>Please verify the payment in the admin dashboard.</p>
-        
-      `
-    };
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>New Payment Notification</h1>
+        </div>
+        <div class="content">
+          <p>New payment has been marked for Order <span class="tracking-number">#${order.trackingNumber}</span></p>
+          <div class="details">
+            <h3>Payment Details</h3>
+            <p><strong>Amount:</strong> <span class="price">₦${order.paymentAmount}</span></p>
+            <p><strong>Reference:</strong> ${order.paymentReference}</p>
+            <p><strong>Customer:</strong> <span class="highlight">${order.userId.firstName} ${order.userId.lastName}</span></p>
+          </div>
+          <p>Please verify the payment in the admin dashboard.</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
 
-    // Use the static method
-    await EmailService.sendEmail(emailData.to, emailData.subject, emailData.html);
+    await EmailService.sendEmail('wisdomabraham92@gmail.com', `New Payment Notification - Order #${order.trackingNumber}`, html);
   }
 }
 
-// Export the sendEmail function separately
-export const sendEmail = EmailService.sendEmail; 
+export const sendEmail = EmailService.sendEmail;
