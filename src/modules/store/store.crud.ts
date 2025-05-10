@@ -90,6 +90,7 @@ export class StoreCrud {
     );
   }
 
+  // Remove store from Database
   async deleteStore(userId: string): Promise<boolean> {
     const result = await Store.deleteOne({ userId });
     return result.deletedCount > 0;

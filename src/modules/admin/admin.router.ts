@@ -40,6 +40,10 @@ router.get('/orders/:orderId/receipts', adminController.getOrderReceipts);
 router.get('/stores', adminController.getAllStores);
 router.get('/stores/:storeId/payment-details', adminController.getStorePaymentDetails);
 router.patch('/stores/:storeId/status', adminController.updateStoreStatus)
+router.patch('/stores/:storeId/close', adminController.closeStore)
+router.patch('/stores/:storeId/open', adminController.openStore)
+
+
 
 // Add these new routes after router.get('/stores', adminController.getAllStores);
 router.get('/stores/:storeId/metrics', adminController.getStoreMetricsById);

@@ -15,6 +15,11 @@ router.get('/my-store', authMiddleware, storeController.getMyStore);
 router.put('/', authMiddleware, storeController.updateStore);
 router.delete('/', authMiddleware, storeController.deleteStore);
 
+
+//Close and open store
+router.patch('/close', authMiddleware, storeController.closeStore);
+router.patch('/open', authMiddleware, storeController.closeStore);
+
 // Store metrics and dashboard
 router.get('/metrics', authMiddleware, storeController.getStoreMetrics);
 // Add this with the other routes
