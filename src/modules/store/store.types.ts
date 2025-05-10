@@ -124,6 +124,44 @@ export interface RevenueOptions {
   endDate?: Date;
 }
 
+export interface RevenueBreakdown {
+  amount: number;
+  orders: number;
+}
+
+export interface RevenueStats {
+  total: RevenueBreakdown;
+  monthly: {
+    current: RevenueBreakdown;
+    previous: RevenueBreakdown;
+  };
+  weekly: {
+    current: RevenueBreakdown;
+    previous: RevenueBreakdown;
+  };
+  daily: {
+    current: RevenueBreakdown;
+    previous: RevenueBreakdown;
+  };
+  breakdown: {
+    monthly: Array<{
+      month: string;
+      amount: number;
+      orders: number;
+    }>;
+    weekly: Array<{
+      week: string;
+      amount: number;
+      orders: number;
+    }>;
+    daily: Array<{
+      date: string;
+      amount: number;
+      orders: number;
+    }>;
+  };
+}
+
 export interface PaymentDetails {
   accountName?: string;
   accountNumber?: string;

@@ -16,6 +16,7 @@ import { OrderItem } from '../orderItem/orderItem.schema';
 import mongoose, { Model } from 'mongoose';
 import { ProductCrud } from '../product/product.crud';
 import { randomBytes } from 'crypto';
+import { NotificationService } from '../../services/notification.service';
 
 interface OrderFilters {
   status?: OrderStatus;
@@ -114,7 +115,7 @@ export class OrderCrud {
           price: item.price,
           variantData: item.variantData,
           name: item.name,
-          status: 'PENDING' // Add default status
+          status: 'PENDING'
         })),
         { session }
       );
@@ -137,6 +138,10 @@ export class OrderCrud {
       };
 
       await session.commitTransaction();
+      
+      // Send notification after successful order creation
+      await NotificationService.sendNewOrderNotification(this.toOrderResponse(orderDoc));
+      
       return this.toOrderResponse(orderDoc);
     } catch (error) {
       await session.abortTransaction();
@@ -448,7 +453,9 @@ export class OrderCrud {
       // Commit transaction
       await session.commitTransaction();
       
-      // Return the order response
+      // Send notification after successful guest order creation
+      await NotificationService.sendNewOrderNotification(this.toOrderResponse(orderDoc));
+      
       return this.toOrderResponse(orderDoc);
     } catch (error) {
       if (session.inTransaction()) {
@@ -515,6 +522,10 @@ export class OrderCrud {
       }], { session });
 
       await session.commitTransaction();
+      
+      // Send notification after successful consumer order creation
+      await NotificationService.sendNewOrderNotification(this.toOrderResponse(order[0]));
+      
       return this.toOrderResponse(order[0]);
     } catch (error) {
       await session.abortTransaction();

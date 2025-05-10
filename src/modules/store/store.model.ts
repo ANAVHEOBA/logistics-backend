@@ -62,6 +62,10 @@ export interface IStore extends Document {
     accountNumber: string;
     bankName: string;
   };
+  displayOrder: number;
+  isFeatured: boolean;
+  featuredUntil?: Date;
+  adminNotes?: string;
 }
 
 export enum StoreCategory {
@@ -256,7 +260,33 @@ const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>(
   {
     timestamps: true,
   },
+<<<<<<< HEAD
 );
+=======
+  slug: {
+    type: String,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+  displayOrder: {
+    type: Number,
+    default: 0
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
+  },
+  featuredUntil: {
+    type: Date
+  },
+  adminNotes: {
+    type: String
+  }
+}, {
+  timestamps: true
+});
+>>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
 
 // Update the pre-save middleware with proper error typing
 storeSchema.pre("save", async function (next) {

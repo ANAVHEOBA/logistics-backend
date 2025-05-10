@@ -8,6 +8,7 @@ export interface IAdmin {
   name: string;
   role: 'admin';
   lastLoginAt?: Date;
+  fcmToken?: string; // Add FCM token for notifications
   assignedOrders: string[]; // Array of order IDs
   activeOrderCount: number;
   orderHistory: {

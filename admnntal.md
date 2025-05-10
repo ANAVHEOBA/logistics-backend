@@ -58,3 +58,51 @@ a@a:~/Downloads/logistics-backend$ curl -X GET http://localhost:5000/api/admin/s
 
 {"success":true,"data":{"storeId":"67b7410f256d7687d08935fd","storeName":"Jessica Fashion Hub","paymentDetails":{"accountName":"Jessica Anavhe","accountNumber":"9876543210","bankName":"Zenith Bank"},"contactInfo":{"email":"jessicaanavheoba@gmail.com","phone":"+2341234567890","whatsapp":"+2341234567890"}}}a@a:~/Downloads/logistics-backend$ 
 a@a:~/Downloads/logistics-backend$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+a@a:~/Downloads/logistics-backend$ curl -X PATCH http://localhost:5000/api/admin/stores/6819543a60a0fc6b94ff97f8/order \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQ2NTM0NzI0LCJleHAiOjE3NDY2MjExMjR9.UoFHbmzV5kGO5jGKH070knX8PU1EITuYcoJSPtDAR_0" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "displayOrder": 1,
+    "isFeatured": true,
+    "featuredUntil": "2024-12-31T23:59:59Z",
+    "adminNotes": "Featured store for holiday season"
+  }'
+{"success":true,"data":{"contactInfo":{"email":"preciousugoso22@gmail.com","phone":"09032227067","whatsapp":""},"address":{"street":"uniben","city":"Benin","state":"Edo","country":"Nigeria","postalCode":"+234"},"image":{"url":"https://res.cloudinary.com/duk2hhkns/image/upload/v1746490510/stores/v80yti9douzprdrziu5m.jpg","publicId":"stores/v80yti9douzprdrziu5m"},"settings":{"isVerified":false,"isFeaturedStore":false,"allowRatings":true},"metrics":{"totalOrders":0,"totalProducts":0,"totalRevenue":0},"_id":"6819543a60a0fc6b94ff97f8","userId":"6819535a60a0fc6b94ff97ee","storeName":"peeBaby","description":"baby wears ","category":"FASHION","status":"ACTIVE","createdAt":"2025-05-06T00:13:46.027Z","updatedAt":"2025-05-06T12:33:35.146Z","slug":"peebaby","__v":0,"adminNotes":"Featured store for holiday season","displayOrder":1,"featuredUntil":"2024-12-31T23:59:59.000Z","isFeatured":true,"storeUrl":"http://localhost:5000/store/peebaby"}}a@a:~/Downloads/logistics-backend$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+a@a:~/Downloads/logistics-backend$ curl -X POST http://localhost:5000/api/admin/stores/bulk-order \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzQ2NTM0NzI0LCJleHAiOjE3NDY2MjExMjR9.UoFHbmzV5kGO5jGKH070knX8PU1EITuYcoJSPtDAR_0" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stores": [
+      { "storeId": "6819543a60a0fc6b94ff97f8", "displayOrder": 1 },
+      { "storeId": "68122f5edbc0b7ccadf1a956", "displayOrder": 2 },
+      { "storeId": "68122dabdbc0b7ccadf1a90e", "displayOrder": 3 }
+    ]
+  }'
+{"success":true,"message":"Store order updated successfully"}a@a:~/Downloads/logistics-backend$ 

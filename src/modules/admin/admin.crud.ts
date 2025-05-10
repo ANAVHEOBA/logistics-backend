@@ -197,4 +197,17 @@ export class AdminCrud {
       }
     );
   }
+
+  async updateFcmToken(adminId: string, fcmToken: string): Promise<IAdminDocument | null> {
+    try {
+      return await AdminSchema.findByIdAndUpdate(
+        adminId,
+        { fcmToken },
+        { new: true }
+      );
+    } catch (error) {
+      console.error('Failed to update FCM token:', error);
+      throw error;
+    }
+  }
 } 

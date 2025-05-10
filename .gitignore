@@ -17,4 +17,4 @@ npm-debug.log*
 .idea/
 
 # OS
-.DS_Store
+.DS_Storesrc/config/firebase/serviceAccountKey.json

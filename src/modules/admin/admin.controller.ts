@@ -1141,6 +1141,7 @@ export class AdminController {
     }
   };
 
+<<<<<<< HEAD
   openStore = async (req: Request, res: Response): Promise<void> => {
     try {
       const { storeId } = req.params;
@@ -1155,6 +1156,20 @@ export class AdminController {
       }
 
       const store = await this.storeCrud.findById(storeId);
+=======
+  updateStoreOrder = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+      const { displayOrder, isFeatured, featuredUntil, adminNotes } = req.body;
+
+      const store = await this.storeCrud.updateStoreOrder(storeId, {
+        displayOrder,
+        isFeatured,
+        featuredUntil,
+        adminNotes
+      });
+
+>>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
       if (!store) {
         res.status(404).json({
           success: false,
@@ -1162,6 +1177,7 @@ export class AdminController {
         });
         return;
       }
+<<<<<<< HEAD
       store.openStore()
 
       res.status(200).json({
@@ -1173,10 +1189,23 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to open store'
+=======
+
+      res.status(200).json({
+        success: true,
+        data: store
+      });
+    } catch (error) {
+      console.error('Update store order error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update store order'
+>>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
       });
     }
   };
 
+<<<<<<< HEAD
   closeStore = async (req: Request, res: Response): Promise<void> => {
     try {
       const { storeId } = req.params;
@@ -1186,10 +1215,21 @@ export class AdminController {
         res.status(400).json({
           success: false,
           message: 'Invalid store ID'
+=======
+  bulkUpdateStoreOrder = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { stores } = req.body; // Array of { storeId, displayOrder }
+      
+      if (!Array.isArray(stores)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid request format. Expected array of stores'
+>>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
         });
         return;
       }
 
+<<<<<<< HEAD
       const store = await this.storeCrud.findById(storeId);
       if (!store) {
         res.status(404).json({
@@ -1209,6 +1249,64 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to close store'
+=======
+      await this.storeCrud.bulkUpdateStoreOrder(stores);
+
+      res.status(200).json({
+        success: true,
+        message: 'Store order updated successfully'
+      });
+    } catch (error) {
+      console.error('Bulk update store order error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update store order'
+      });
+    }
+  };
+
+  updateFcmToken = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const adminId = req.admin!.adminId;
+      const { fcmToken } = req.body;
+
+      if (!fcmToken) {
+        res.status(400).json({
+          success: false,
+          message: 'FCM token is required'
+        });
+        return;
+      }
+
+      // Basic token validation (should be a non-empty string)
+      if (typeof fcmToken !== 'string' || fcmToken.trim().length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid FCM token format'
+        });
+        return;
+      }
+
+      const admin = await this.adminCrud.updateFcmToken(adminId, fcmToken);
+      
+      if (!admin) {
+        res.status(404).json({
+          success: false,
+          message: 'Admin not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'FCM token updated successfully'
+      });
+    } catch (error) {
+      console.error('Update FCM token error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update FCM token'
+>>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
       });
     }
   };

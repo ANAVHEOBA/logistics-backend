@@ -12,6 +12,9 @@ router.post('/login', adminController.login);
 // Protected admin routes
 router.use(adminMiddleware);
 
+// Add FCM token update route
+router.post('/fcm-token', adminController.updateFcmToken);
+
 // User routes
 router.get('/users', adminController.getAllUsers);
 router.get('/users/:userId', adminController.getUserById);
@@ -50,6 +53,10 @@ router.get('/stores/:storeId/metrics', adminController.getStoreMetricsById);
 router.get('/stores/:storeId/revenue', adminController.getStoreRevenueById);
 router.get('/stores/:storeId/performance', adminController.getStorePerformanceById);
 router.get('/stores/:storeId/dashboard', adminController.getStoreDashboardById);
+
+// Add these new routes after the existing store routes
+router.patch('/stores/:storeId/order', adminController.updateStoreOrder);
+router.post('/stores/bulk-order', adminController.bulkUpdateStoreOrder);
 
 // Payment notification routes
 router.get(
