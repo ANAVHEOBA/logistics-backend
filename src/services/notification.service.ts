@@ -6,6 +6,8 @@ import { UserSchema } from '../modules/user/user.schema';
 import { StoreSchema } from '../modules/store/store.schema';
 import { IUser } from '../modules/user/user.model';
 import { IOrderItemResponse } from '../modules/orderItem/orderItem.model';
+import { IStore } from '../modules/store/store.model';
+import mongoose from 'mongoose';
 
 interface IPopulatedOrder extends Omit<IOrder, 'userId' | 'items'> {
   userId?: {
@@ -22,6 +24,16 @@ interface IPopulatedOrder extends Omit<IOrder, 'userId' | 'items'> {
     };
   }>;
 }
+
+type LeanStore = {
+  _id: mongoose.Types.ObjectId;
+  storeName: string;
+  contactInfo: {
+    email: string;
+    phone: string;
+    whatsapp?: string;
+  };
+};
 
 export class NotificationService {
   private static emailService: EmailService = new EmailService();
@@ -40,7 +52,8 @@ export class NotificationService {
       order.items.map(async (item) => {
         const store = await StoreSchema.findById(item.storeId)
           .select('storeName contactInfo')
-          .lean();
+          .lean() as LeanStore | null;
+
         return {
           ...item,
           storeId: {

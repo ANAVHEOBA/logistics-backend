@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { IStore, StoreCategory, StoreStatus } from './store.model';
+import { Store } from './store.model';
 
 const storeSchema = new Schema<IStore>({
   userId: {
@@ -25,5 +26,4 @@ storeSchema.methods.getStoreUrl = function(): string {
   return `https://yourapp.com/store/${this.slug}`;
 };
 
-export const Store = mongoose.model<IStore>('Store', storeSchema);
 export const StoreSchema = Store; 

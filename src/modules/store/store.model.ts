@@ -82,6 +82,19 @@ export enum StoreStatus {
   SUSPENDED = 'SUSPENDED'
 }
 
+// Define the method type for TypeScript
+interface IStoreMethods {
+  getStoreUrl(): string;
+}
+
+export interface StoreListOptions {
+  filter?: Record<string, any>;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 // Move the generateUniqueSlug function before the schema definition
 async function generateUniqueSlug(storeName: string): Promise<string> {
   const baseSlug = storeName
@@ -101,19 +114,6 @@ async function generateUniqueSlug(storeName: string): Promise<string> {
   }
   
   return slug;
-}
-
-// Define the method type for TypeScript
-interface IStoreMethods {
-  getStoreUrl(): string;
-}
-
-export interface StoreListOptions {
-  filter?: Record<string, any>;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
 }
 
 const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>({
@@ -344,5 +344,5 @@ storeSchema.statics.listStores = async function(options: StoreListOptions) {
   };
 };
 
-// Export the model with proper typing
-export const Store = mongoose.model<IStore, mongoose.Model<IStore, {}, IStoreMethods>>('Store', storeSchema); 
+// Check if the model exists before creating it
+export const Store = mongoose.models.Store || mongoose.model<IStore, mongoose.Model<IStore, {}, IStoreMethods>>('Store', storeSchema); 
