@@ -4,6 +4,6 @@ export const generateOTP = (): string => {
 
 export const getOTPExpiry = (): Date => {
   const expiryDate = new Date();
-  expiryDate.setMinutes(expiryDate.getMinutes() + 10); // OTP expires in 10 minutes
+  expiryDate.setMinutes(expiryDate.getMinutes() + 30); // OTP expires in 30 minutes
   return expiryDate;
 }; 
