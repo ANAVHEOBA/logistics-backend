@@ -48,7 +48,7 @@ export class AdminController {
   createFirstAdmin = async (req: Request, res: Response): Promise<void> => {
     try {
       // Check if any admin exists
-      const existingAdmin = await this.adminCrud.findByEmail('admin@logistics.com');
+      const existingAdmin = await this.adminCrud.findByEmail('africgoa2z@gmail.com');
       if (existingAdmin) {
         res.status(400).json({
           success: false,
@@ -58,7 +58,7 @@ export class AdminController {
       }
 
       const adminData = {
-        email: 'admin@logistics.com',
+        email: 'africgoa2z@gmail.com',
         password: 'admin123', // This will be hashed by the schema
         name: 'System Admin',
         role: 'admin' as const
@@ -1245,4 +1245,30 @@ export class AdminController {
       });
     }
   };
+
+  async initializeAdmin(): Promise<IAdminDocument | null> {
+    try {
+      // Check if admin already exists
+      const existingAdmin = await this.adminCrud.findByEmail('africgoa2z@gmail.com');
+      
+      if (existingAdmin) {
+        console.log('Admin already exists');
+        return existingAdmin;
+      }
+
+      // Create default admin if none exists
+      const adminData = {
+        email: 'africgoa2z@gmail.com',
+        password: 'admin123', // This will be hashed by the schema
+        name: 'System Admin',
+        role: 'admin' as const
+      };
+
+      const admin = await this.adminCrud.createAdmin(adminData);
+      return admin;
+    } catch (error) {
+      console.error('Error initializing admin:', error);
+      throw error;
+    }
+  }
 }

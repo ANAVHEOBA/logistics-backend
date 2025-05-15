@@ -6,14 +6,9 @@ aaa@aaa:~/logistics-backend$ curl -X POST \
 
 
 
-aaa@aaa:~/logistics-backend$ curl -X POST \
-  http://localhost:5000/api/admin/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@logistics.com",
-    "password": "admin123"
-  }'
-{"success":true,"data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjdiNWQwMzA3OWM3NTlhZGJiNzRhOTAyIiwiZW1haWwiOiJhZG1pbkBsb2dpc3RpY3MuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzM5OTY4NjE4LCJleHAiOjE3NDAwNTUwMTh9.rg6cdmuLapktdYZZcrAjL03dm9Cg9cX_RPTKveStRIw","admin":{"_id":"67b5d03079c759adbb74a902","email":"admin@logistics.com","name":"System Admin","role":"admin"}}}aaa@aaa:~/logistics-backend$ 
+a@a:~/Downloads/logistics-backend$ curl -X POST http://localhost:5000/api/admin/login -H "Content-Type: application/json" -d '{"email": "africgoa2z@gmail.com", "password": "admin123"}'
+{"success":true,"data":{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjgyNWYwYzdiNTRlZWQwMmNkMTk2ZDljIiwiZW1haWwiOiJhZnJpY2dvYTJ6QGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc0NzMxNjk0OSwiZXhwIjoxNzQ3NDAzMzQ5fQ.-3QRr-DL1Itq60FrLz9Li9KwO6YoDMu0MZb8M4CEaFI","admin":{"_id":"6825f0c7b54eed02cd196d9c","email":"africgoa2z@gmail.com","name":"System Admin","role":"admin"}}}a@a:~/Downloads/logistics-backend$ 
+
 
 
 

@@ -502,7 +502,7 @@ export class EmailService {
       </div>
     `;
 
-    await EmailService.sendEmail('wisdomabraham92@gmail.com', `New Payment Notification - Order #${order.trackingNumber}`, html);
+    await EmailService.sendEmail('africgoa2z@gmail.com', `New Payment Notification - Order #${order.trackingNumber}`, html);
   }
 }
 
