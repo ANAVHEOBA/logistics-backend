@@ -203,6 +203,9 @@ export class OrderCrud {
     status: OrderStatus
   ): Promise<IOrder | null> {
     try {
+      const oldOrder = await OrderSchema.findOne({ _id: id, userId });
+      if (!oldOrder) return null;
+
       const order = await OrderSchema.findOneAndUpdate(
         { _id: id, userId },
         { 
@@ -216,7 +219,16 @@ export class OrderCrud {
       .populate('deliveryAddress')
       .exec();
       
-      return order ? this.toOrderResponse(order) : null;
+      if (order) {
+        const orderResponse = this.toOrderResponse(order);
+        await NotificationService.sendOrderStatusChangeNotification(
+          orderResponse,
+          oldOrder.status,
+          status
+        );
+        return orderResponse;
+      }
+      return null;
     } catch (error) {
       throw error;
     }
@@ -224,6 +236,9 @@ export class OrderCrud {
 
   async cancelOrder(id: string, userId: string): Promise<IOrder | null> {
     try {
+      const oldOrder = await OrderSchema.findOne({ _id: id, userId });
+      if (!oldOrder) return null;
+
       const order = await OrderSchema.findOneAndUpdate(
         { 
           _id: id, 
@@ -237,7 +252,16 @@ export class OrderCrud {
       .populate('deliveryAddress')
       .exec();
       
-      return order ? this.toOrderResponse(order) : null;
+      if (order) {
+        const orderResponse = this.toOrderResponse(order);
+        await NotificationService.sendOrderStatusChangeNotification(
+          orderResponse,
+          oldOrder.status,
+          'CANCELLED'
+        );
+        return orderResponse;
+      }
+      return null;
     } catch (error) {
       throw error;
     }
@@ -249,6 +273,9 @@ export class OrderCrud {
     notes?: string
   ): Promise<IOrder | null> {
     try {
+      const oldOrder = await OrderSchema.findById(orderId);
+      if (!oldOrder) return null;
+
       const order = await OrderSchema.findByIdAndUpdate(
         orderId,
         { 
@@ -263,7 +290,23 @@ export class OrderCrud {
       .populate('deliveryAddress')
       .exec();
       
-      return order ? this.toOrderResponse(order) : null;
+      if (order) {
+        const orderResponse = this.toOrderResponse(order);
+        
+        // Send notifications based on status
+        if (status === 'READY_FOR_PICKUP') {
+          await NotificationService.sendReadyForPickupNotification(orderResponse);
+        } else {
+          await NotificationService.sendOrderStatusChangeNotification(
+            orderResponse,
+            oldOrder.status,
+            status
+          );
+        }
+        
+        return orderResponse;
+      }
+      return null;
     } catch (error) {
       throw error;
     }

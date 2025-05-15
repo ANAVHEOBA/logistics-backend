@@ -1,8 +1,24 @@
 import nodemailer from 'nodemailer';
 import { config } from '../config/environment';
-import { IOrder } from '../modules/order/order.model';
+import { IOrder, OrderStatus } from '../modules/order/order.model';
 import { IUser } from '../modules/user/user.model';
 import { IOrderItemResponse } from '../modules/orderItem/orderItem.model';
+
+interface IPopulatedOrder extends Omit<IOrder, 'userId' | 'items'> {
+  userId?: {
+    _id: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  items: Array<IOrderItemResponse & {
+    storeId?: {
+      _id: string;
+      email?: string;
+      storeName?: string;
+    };
+  }>;
+}
 
 interface IEmailRecipient {
   email: string;
@@ -503,6 +519,197 @@ export class EmailService {
     `;
 
     await EmailService.sendEmail('africgoa2z@gmail.com', `New Payment Notification - Order #${order.trackingNumber}`, html);
+  }
+
+  async sendReadyForPickupEmailToConsumer(order: IPopulatedOrder): Promise<void> {
+    if (!order.userId?.email) return;
+
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Order Ready for Pickup</h1>
+        </div>
+        <div class="content">
+          <p>Hello ${order.userId.firstName},</p>
+          <p>Great news! Your order is ready for pickup.</p>
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Status:</strong> <span class="status status-ready">READY FOR PICKUP</span></p>
+            <p><strong>Estimated Delivery:</strong> ${new Date(order.estimatedDeliveryDate).toLocaleDateString()}</p>
+          </div>
+          <p>Our delivery partner will pick up your order soon for delivery.</p>
+          <div style="background-color: #f8f8f8; padding: 15px; border-left: 4px solid #FFD700; margin: 20px 0;">
+            <p style="color: #666; margin: 0;">
+              <strong>Note:</strong> You'll receive another notification once your order has been picked up.
+            </p>
+          </div>
+          <a href="${process.env.FRONTEND_URL}/track/${order.trackingNumber}" class="button">Track Your Order</a>
+        </div>
+        <div class="footer">
+          <p>Thank you for choosing our service!</p>
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+
+    await EmailService.sendEmail(order.userId.email, `Order Ready for Pickup - ${order.trackingNumber}`, html);
+  }
+
+  async sendReadyForPickupEmailToAdmin(order: IPopulatedOrder): Promise<void> {
+    const storeName = order.items[0]?.storeId?.storeName || 'Unknown Store';
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Order Ready for Pickup - Action Required</h1>
+        </div>
+        <div class="content">
+          <p>An order is ready for pickup from ${storeName}.</p>
+          <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+            <p><strong>Express Delivery:</strong> ${order.isExpressDelivery ? 'Yes' : 'No'}</p>
+            <p><strong>Package Size:</strong> ${order.packageSize}</p>
+            <p><strong>Customer:</strong> ${order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'Guest'}</p>
+          </div>
+          <div class="details">
+            <h3>Items</h3>
+            ${order.items.map(item => `
+              <div style="margin-bottom: 10px; padding: 10px; border-bottom: 1px solid #FFD700;">
+                <p><strong>Item:</strong> ${item.name}</p>
+                <p><strong>Quantity:</strong> ${item.quantity}</p>
+                <p><strong>Price:</strong> <span class="price">₦${item.price}</span></p>
+              </div>
+            `).join('')}
+          </div>
+          <p style="color: #FF0000; font-weight: bold;">Please assign a delivery partner for pickup.</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+
+    await EmailService.sendEmail('africgoa2z@gmail.com', `Order Ready for Pickup - #${order.trackingNumber}`, html);
+  }
+
+  async sendStatusUpdateToAll(order: IPopulatedOrder, status: OrderStatus): Promise<void> {
+    try {
+      // Send to consumer
+      if (order.userId?.email) {
+        const statusMessages: { [key in OrderStatus]: string } = {
+          PENDING: 'Your order is being processed.',
+          CONFIRMED: 'Your order has been confirmed.',
+          READY_FOR_PICKUP: 'Your order is ready for pickup.',
+          PICKED_UP: 'Your order has been picked up by our delivery partner.',
+          IN_TRANSIT: 'Your order is on its way to you.',
+          DELIVERED: 'Your order has been successfully delivered.',
+          CANCELLED: 'Your order has been cancelled.',
+          FAILED_DELIVERY: 'There was an issue delivering your order.'
+        };
+
+        const html = `
+          <div class="container">
+            <div class="header">
+              <h1>Order Status Update</h1>
+            </div>
+            <div class="content">
+              <p>Hello ${order.userId.firstName},</p>
+              <p>${statusMessages[status]}</p>
+              <div class="details">
+                <h3>Order Details</h3>
+                <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+                <p><strong>Status:</strong> <span class="status status-${status.toLowerCase()}">${status}</span></p>
+                ${order.statusNotes ? `<p><strong>Additional Notes:</strong> ${order.statusNotes}</p>` : ''}
+              </div>
+              <a href="${process.env.FRONTEND_URL}/track/${order.trackingNumber}" class="button">Track Your Order</a>
+            </div>
+            <div class="footer">
+              <p>Thank you for choosing our service!</p>
+              <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+            </div>
+          </div>
+        `;
+
+        await EmailService.sendEmail(order.userId.email, `Order Status Update - ${order.trackingNumber}`, html);
+      }
+
+      // Send to store
+      const storeEmail = order.items[0]?.storeId?.email;
+      if (storeEmail) {
+        const storeMessages: { [key in OrderStatus]: string } = {
+          PENDING: 'New order received, awaiting confirmation.',
+          CONFIRMED: 'Order has been confirmed.',
+          READY_FOR_PICKUP: 'Order is marked as ready for pickup.',
+          PICKED_UP: 'Order has been picked up by delivery partner.',
+          IN_TRANSIT: 'Order is in transit to customer.',
+          DELIVERED: 'Order has been successfully delivered.',
+          CANCELLED: 'Order has been cancelled.',
+          FAILED_DELIVERY: 'Delivery attempt failed.'
+        };
+
+        const html = `
+          <div class="container">
+            <div class="header">
+              <h1>Order Status Update</h1>
+            </div>
+            <div class="content">
+              <p>${storeMessages[status]}</p>
+              <div class="details">
+                <h3>Order Details</h3>
+                <p><strong>Order ID:</strong> ${order._id}</p>
+                <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+                <p><strong>Status:</strong> <span class="status status-${status.toLowerCase()}">${status}</span></p>
+                <p><strong>Customer:</strong> ${order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'Guest'}</p>
+              </div>
+              <div class="details">
+                <h3>Items</h3>
+                ${order.items.map(item => `
+                  <div style="margin-bottom: 10px; padding: 10px; border-bottom: 1px solid #FFD700;">
+                    <p><strong>Item:</strong> ${item.name}</p>
+                    <p><strong>Quantity:</strong> ${item.quantity}</p>
+                    <p><strong>Price:</strong> <span class="price">₦${item.price}</span></p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+            </div>
+          </div>
+        `;
+
+        await EmailService.sendEmail(storeEmail, `Order Status Update - ${order.trackingNumber}`, html);
+      }
+
+      // Send to admin for specific statuses
+      if (['READY_FOR_PICKUP', 'FAILED_DELIVERY', 'CANCELLED'].includes(status)) {
+        const html = `
+          <div class="container">
+            <div class="header">
+              <h1>Order ${status}</h1>
+            </div>
+            <div class="content">
+              <div class="details">
+                <h3>Order Details</h3>
+                <p><strong>Tracking Number:</strong> <span class="tracking-number">${order.trackingNumber}</span></p>
+                <p><strong>Status:</strong> <span class="status status-${status.toLowerCase()}">${status}</span></p>
+                <p><strong>Customer:</strong> ${order.userId ? `${order.userId.firstName} ${order.userId.lastName} (${order.userId.email})` : 'Guest'}</p>
+                ${order.statusNotes ? `<p><strong>Notes:</strong> ${order.statusNotes}</p>` : ''}
+              </div>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+            </div>
+          </div>
+        `;
+
+        await EmailService.sendEmail('africgoa2z@gmail.com', `Order ${status} - #${order.trackingNumber}`, html);
+      }
+    } catch (error) {
+      console.error('Error sending status update emails:', error);
+      throw error;
+    }
   }
 }
 
