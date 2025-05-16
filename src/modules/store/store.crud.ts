@@ -697,9 +697,50 @@ export class StoreCrud {
           }
         },
         {
+          $lookup: {
+            from: 'products',
+            let: { productId: '$items.productId' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ['$_id', '$$productId']
+                  }
+                }
+              },
+              {
+                $project: {
+                  name: 1,
+                  _id: 1,
+                  status: 1
+                }
+              }
+            ],
+            as: 'productDetails'
+          }
+        },
+        {
+          $addFields: {
+            product: { $arrayElemAt: ['$productDetails', 0] }
+          }
+        },
+        {
           $group: {
             _id: '$items.productId',
-            name: { $first: '$items.name' },
+            name: { 
+              $first: {
+                $cond: [
+                  { $ifNull: ['$product.name', false] },
+                  '$product.name',
+                  { $concat: ['[Deleted] Product ID: ', { $toString: '$items.productId' }] }
+                ]
+              }
+            },
+            status: {
+              $first: {
+                $ifNull: ['$product.status', 'DELETED']
+              }
+            },
             totalOrders: { $sum: 1 },
             totalQuantity: { $sum: '$items.quantity' },
             totalRevenue: {
@@ -712,14 +753,25 @@ export class StoreCrud {
             _id: 0,
             productId: '$_id',
             name: 1,
+            status: 1,
             totalOrders: 1,
             totalQuantity: 1,
             totalRevenue: 1
           }
+        },
+        {
+          $sort: { totalRevenue: -1 }
         }
       ]);
 
-      return result;
+      // Additional check to ensure no null names and format deleted products
+      const cleanedResult = result.map(product => ({
+        ...product,
+        name: product.name || `[Deleted] Product ID: ${product.productId}`,
+        status: product.status || 'DELETED'
+      }));
+
+      return cleanedResult;
     } catch (error) {
       console.error('Get product performance error:', error);
       throw error;
