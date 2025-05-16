@@ -166,6 +166,19 @@ export class UserCrud {
     }
   }
 
+  async updateUser(userId: string, updateData: Partial<IUser>): Promise<IUser | null> {
+    try {
+      const user = await UserSchema.findByIdAndUpdate(
+        userId,
+        updateData,
+        { new: true }
+      ).select('-password');
+      return user ? this.toUserResponse(user) : null;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   private toUserResponse(user: IUserDocument): IUser {
     const userObject = user.toObject();
     return {

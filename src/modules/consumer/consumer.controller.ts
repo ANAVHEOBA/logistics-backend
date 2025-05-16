@@ -46,15 +46,48 @@ export class ConsumerController {
 
       // Check if consumer already exists
       const existingConsumer = await this.consumerCrud.findByEmail(email);
+      
       if (existingConsumer) {
-        res.status(400).json({
-          success: false,
-          message: 'Email already registered'
+        // If consumer exists and is verified, reject registration
+        if (existingConsumer.isEmailVerified) {
+          res.status(400).json({
+            success: false,
+            message: 'Email already registered'
+          });
+          return;
+        }
+
+        // If consumer exists but not verified, check verification code status
+        const now = new Date();
+        if (now <= existingConsumer.verificationCodeExpiry) {
+          // Verification code is still valid
+          res.status(400).json({
+            success: false,
+            message: 'Please verify your email with the code already sent',
+            consumerId: existingConsumer._id
+          });
+          return;
+        }
+
+        // Verification code has expired, generate new one
+        const otp = generateOTP();
+        const updatedConsumer = await this.consumerCrud.updateConsumer(existingConsumer._id.toString(), {
+          verificationCode: otp,
+          verificationCodeExpiry: getOTPExpiry()
+        });
+
+        // Send new verification email
+        await sendVerificationEmail(email, otp, firstName);
+
+        res.status(200).json({
+          success: true,
+          message: 'New verification code has been sent to your email',
+          consumerId: existingConsumer._id
         });
         return;
       }
 
-      // Generate OTP and hash password
+      // If consumer doesn't exist, proceed with new registration
       const otp = generateOTP();
       const hashedPassword = await bcrypt.hash(password, 10);
 
