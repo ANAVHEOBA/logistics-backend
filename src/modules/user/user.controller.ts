@@ -23,15 +23,48 @@ export class UserController {
 
       // Check if user already exists
       const existingUser = await this.userCrud.findByEmail(email);
+      
       if (existingUser) {
-        res.status(400).json({
-          success: false,
-          message: 'Email already registered'
+        // If user exists and is verified, reject registration
+        if (existingUser.isEmailVerified) {
+          res.status(400).json({
+            success: false,
+            message: 'Email already registered'
+          });
+          return;
+        }
+
+        // If user exists but not verified, check verification code status
+        const now = new Date();
+        if (now <= existingUser.verificationCodeExpiry) {
+          // Verification code is still valid
+          res.status(400).json({
+            success: false,
+            message: 'Please verify your email with the code already sent',
+            userId: existingUser._id
+          });
+          return;
+        }
+
+        // Verification code has expired, generate new one
+        const otp = generateOTP();
+        const updatedUser = await this.userCrud.updateUser(existingUser._id.toString(), {
+          verificationCode: otp,
+          verificationCodeExpiry: getOTPExpiry()
+        });
+
+        // Send new verification email
+        await sendVerificationEmail(email, otp, name);
+
+        res.status(200).json({
+          success: true,
+          message: 'New verification code has been sent to your email',
+          userId: existingUser._id
         });
         return;
       }
 
-      // Generate OTP and hash password
+      // If user doesn't exist, proceed with new registration
       const otp = generateOTP();
       const hashedPassword = await bcrypt.hash(password, 10);
 

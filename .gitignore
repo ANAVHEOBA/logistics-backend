@@ -18,3 +18,7 @@ npm-debug.log*
 
 # OS
 .DS_Storesrc/config/firebase/serviceAccountKey.json
+
+
+# Socket test
+socket_html

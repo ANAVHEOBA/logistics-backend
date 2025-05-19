@@ -57,7 +57,12 @@ export const sendVerificationEmail = async (
     <h2 style="color: #333; margin-top: 0;">Email Verification</h2>
     <p style="color: #555;">Hello ${firstName},</p>
     <p style="color: #555;">Your verification code is: <strong style="background-color: #000000; color: #FFD700; padding: 5px 10px; border-radius: 3px; font-family: monospace;">${otp}</strong></p>
-    <p style="color: #555;">This code will expire in 10 minutes.</p>
+    <p style="color: #555;">This code will expire in 30 minutes.</p>
+    <div style="background-color: #f8f8f8; padding: 15px; border-left: 4px solid #FFD700; margin: 20px 0;">
+      <p style="color: #666; margin: 0;">
+        <strong>Important:</strong> If you don't see this email in your inbox, please check your spam or junk folder. To ensure delivery of future emails, please add ${config.email.auth.user} to your contacts.
+      </p>
+    </div>
   `;
   
   await sendEmail(email, subject, emailTemplate(content));
@@ -73,8 +78,13 @@ export const sendPasswordResetEmail = async (
     <h2 style="color: #333; margin-top: 0;">Password Reset</h2>
     <p style="color: #555;">Hello ${firstName},</p>
     <p style="color: #555;">Your password reset code is: <strong style="background-color: #000000; color: #FFD700; padding: 5px 10px; border-radius: 3px; font-family: monospace;">${token}</strong></p>
-    <p style="color: #555;">This code will expire in 10 minutes.</p>
+    <p style="color: #555;">This code will expire in 30 minutes.</p>
     <p style="color: #555;">If you didn't request this, please ignore this email.</p>
+    <div style="background-color: #f8f8f8; padding: 15px; border-left: 4px solid #FFD700; margin: 20px 0;">
+      <p style="color: #666; margin: 0;">
+        <strong>Important:</strong> If you don't see this email in your inbox, please check your spam or junk folder. To ensure delivery of future emails, please add ${config.email.auth.user} to your contacts.
+      </p>
+    </div>
   `;
   
   await sendEmail(email, subject, emailTemplate(content));

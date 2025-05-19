@@ -85,6 +85,19 @@ export enum StoreStatus {
   SUSPENDED = "SUSPENDED",
 }
 
+// Define the method type for TypeScript
+interface IStoreMethods {
+  getStoreUrl(): string;
+}
+
+export interface StoreListOptions {
+  filter?: Record<string, any>;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 // Move the generateUniqueSlug function before the schema definition
 async function generateUniqueSlug(storeName: string): Promise<string> {
   const baseSlug = storeName
@@ -106,6 +119,7 @@ async function generateUniqueSlug(storeName: string): Promise<string> {
   return slug;
 }
 
+<<<<<<< HEAD
 // Define the method type for TypeScript
 interface IStoreMethods {
   getStoreUrl(): string;
@@ -128,6 +142,40 @@ const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>(
       ref: "User",
       required: true,
       unique: true,
+=======
+const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    unique: true
+  },
+  storeName: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  description: {
+    type: String,
+    required: true,
+    maxlength: 1000
+  },
+  category: {
+    type: String,
+    enum: Object.values(StoreCategory),
+    required: true
+  },
+  status: {
+    type: String,
+    enum: Object.values(StoreStatus),
+    default: StoreStatus.PENDING
+  },
+  contactInfo: {
+    email: {
+      type: String,
+      required: true
+>>>>>>> 2d49715d687e3e55816808b4c2228d2a151dda0e
     },
     storeName: {
       type: String,
@@ -382,9 +430,14 @@ storeSchema.statics.listStores = async function (options: StoreListOptions) {
   };
 };
 
+<<<<<<< HEAD
 // Export the model with proper typing
 export const Store = mongoose.model<
   IStore,
   mongoose.Model<IStore, {}, IStoreMethods>
 >("Store", storeSchema);
 
+=======
+// Check if the model exists before creating it
+export const Store = mongoose.models.Store || mongoose.model<IStore, mongoose.Model<IStore, {}, IStoreMethods>>('Store', storeSchema); 
+>>>>>>> 2d49715d687e3e55816808b4c2228d2a151dda0e

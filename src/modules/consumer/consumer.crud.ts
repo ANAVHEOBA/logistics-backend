@@ -154,6 +154,19 @@ export class ConsumerCrud {
     );
   }
 
+  async updateConsumer(
+    consumerId: string,
+    updates: Partial<IConsumerBase>
+  ): Promise<IConsumerDocument | null> {
+    if (!mongoose.Types.ObjectId.isValid(consumerId)) return null;
+
+    return await ConsumerSchema.findByIdAndUpdate(
+      consumerId,
+      { $set: updates },
+      { new: true }
+    );
+  }
+
   async setPasswordResetToken(
     email: string,
     token: string,
