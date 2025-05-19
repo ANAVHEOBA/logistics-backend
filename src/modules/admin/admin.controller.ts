@@ -1141,7 +1141,6 @@ export class AdminController {
     }
   };
 
-<<<<<<< HEAD
   openStore = async (req: Request, res: Response): Promise<void> => {
     try {
       const { storeId } = req.params;
@@ -1156,7 +1155,28 @@ export class AdminController {
       }
 
       const store = await this.storeCrud.findById(storeId);
-=======
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+      store.openStore()
+
+      res.status(200).json({
+        success: true,
+        message: "store opened successfully"
+      });
+    } catch (error) {
+      console.error('Open store error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to open store'
+      })
+    }
+  };
+
   updateStoreOrder = async (req: Request, res: Response): Promise<void> => {
     try {
       const { storeId } = req.params;
@@ -1169,28 +1189,6 @@ export class AdminController {
         adminNotes
       });
 
->>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
-      if (!store) {
-        res.status(404).json({
-          success: false,
-          message: 'Store not found'
-        });
-        return;
-      }
-<<<<<<< HEAD
-      store.openStore()
-
-      res.status(200).json({
-        success: true,
-        message: "store opened successfully"
-      });
-    } catch (error) {
-      console.error('Open store error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to open store'
-=======
-
       res.status(200).json({
         success: true,
         data: store
@@ -1200,12 +1198,10 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to update store order'
->>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
       });
     }
-  };
+  }
 
-<<<<<<< HEAD
   closeStore = async (req: Request, res: Response): Promise<void> => {
     try {
       const { storeId } = req.params;
@@ -1215,21 +1211,9 @@ export class AdminController {
         res.status(400).json({
           success: false,
           message: 'Invalid store ID'
-=======
-  bulkUpdateStoreOrder = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { stores } = req.body; // Array of { storeId, displayOrder }
-      
-      if (!Array.isArray(stores)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid request format. Expected array of stores'
->>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
-        });
-        return;
+        })
       }
 
-<<<<<<< HEAD
       const store = await this.storeCrud.findById(storeId);
       if (!store) {
         res.status(404).json({
@@ -1249,7 +1233,21 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to close store'
-=======
+      })
+    };
+  }
+
+  bulkUpdateStoreOrder = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { stores } = req.body; // Array of { storeId, displayOrder }
+      
+      if (!Array.isArray(stores)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid request format. Expected array of stores'
+        });
+        return;
+      }
       await this.storeCrud.bulkUpdateStoreOrder(stores);
 
       res.status(200).json({
@@ -1263,7 +1261,7 @@ export class AdminController {
         message: 'Failed to update store order'
       });
     }
-  };
+  }
 
   updateFcmToken = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -1306,7 +1304,6 @@ export class AdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to update FCM token'
->>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
       });
     }
   };

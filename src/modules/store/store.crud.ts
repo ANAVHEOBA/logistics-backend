@@ -998,9 +998,6 @@ export class StoreCrud {
       throw error;
     }
   }
-<<<<<<< HEAD
-} 
-=======
 
   // Add new method for bulk update
   async bulkUpdateStoreOrder(updates: Array<{ storeId: string; displayOrder: number }>): Promise<void> {
@@ -1028,4 +1025,3 @@ export class StoreCrud {
     );
   }
 } 
->>>>>>> e048606b3b22f64b04ceefa15a7132adb28918e9
