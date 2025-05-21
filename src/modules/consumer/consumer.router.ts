@@ -11,7 +11,7 @@ router.post('/register', validateConsumerRegistration, consumerController.regist
 router.post('/verify-email', consumerController.verifyEmail);
 router.post('/login', consumerController.login);
 router.post('/forgot-password', consumerController.forgotPassword);
-router.post('/reset-password', consumerController.resetPassword);
+
 
 // Protected routes - require consumer authentication
 router.use(authenticateConsumer);
@@ -22,6 +22,7 @@ router.get('/store-ratings/:storeId', consumerController.getStoreRatings);
 router.post('/favorite-store/:storeId', consumerController.addFavoriteStore);
 router.delete('/favorite-store/:storeId', consumerController.removeFavoriteStore);
 router.put('/preferred-categories', consumerController.updatePreferredCategories);
+router.post('/reset-password', consumerController.resetPassword);
 
 // Add new route for getting store's default address
 router.get(

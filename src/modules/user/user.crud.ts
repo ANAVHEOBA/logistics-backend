@@ -187,6 +187,44 @@ export class UserCrud {
     } as IUser;
   }
 
+  async setPasswordResetToken(
+    email: string,
+    token: string,
+    expiry: Date
+  ): Promise<IUser | null> {
+    const user = await UserSchema.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          passwordResetToken: token,
+          passwordResetExpiry: expiry
+        }
+      },
+      { new: true }
+    );
+    return user ? this.toUserResponse(user) : null;
+  }
+
+  async updatePassword(
+    userId: string,
+    hashedPassword: string
+  ): Promise<IUser | null> {
+    if (!mongoose.Types.ObjectId.isValid(userId)) return null;
+
+    const user = await UserSchema.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          password: hashedPassword,
+          passwordResetToken: null,
+          passwordResetExpiry: null
+        }
+      },
+      { new: true }
+    );
+    return user ? this.toUserResponse(user) : null;
+  }
+
   public toUser(userDoc: IUserDocument): IUser {
     return {
       ...userDoc.toObject(),
