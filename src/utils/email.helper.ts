@@ -71,14 +71,23 @@ export const sendVerificationEmail = async (
 export const sendPasswordResetEmail = async (
   email: string,
   token: string,
-  firstName: string
+  firstName: string,
+  accountType: 'merchant' | 'consumer' = 'consumer'
 ): Promise<void> => {
+  const resetLink = accountType === 'merchant' 
+    ? 'https://www.gofroma2zafrica.com/reset-password?accountType=merchant'
+    : 'https://www.gofroma2zafrica.com/reset-password?accountType=consumer';
+
   const subject = '🔑 Password Reset Request - GoFromA2Z Africa';
   const content = `
     <h2 style="color: #333; margin-top: 0;">Password Reset</h2>
     <p style="color: #555;">Hello ${firstName},</p>
     <p style="color: #555;">Your password reset code is: <strong style="background-color: #000000; color: #FFD700; padding: 5px 10px; border-radius: 3px; font-family: monospace;">${token}</strong></p>
     <p style="color: #555;">This code will expire in 30 minutes.</p>
+    <p style="color: #555;">Click the button below to reset your password:</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${resetLink}" style="background-color: #000000; color: #FFD700; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Reset Password</a>
+    </div>
     <p style="color: #555;">If you didn't request this, please ignore this email.</p>
     <div style="background-color: #f8f8f8; padding: 15px; border-left: 4px solid #FFD700; margin: 20px 0;">
       <p style="color: #666; margin: 0;">

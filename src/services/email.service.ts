@@ -711,6 +711,45 @@ export class EmailService {
       throw error;
     }
   }
+
+  async sendPasswordResetEmail(
+    email: string,
+    token: string,
+    firstName: string,
+    accountType: 'merchant' | 'consumer' = 'consumer'
+  ): Promise<void> {
+    const resetLink = accountType === 'merchant' 
+      ? 'https://www.gofroma2zafrica.com/reset-password?accountType=merchant'
+      : 'https://www.gofroma2zafrica.com/reset-password?accountType=consumer';
+
+    const html = `
+      <div class="container">
+        <div class="header">
+          <h1>Password Reset</h1>
+        </div>
+        <div class="content">
+          <p>Hello <span class="highlight">${firstName}</span>,</p>
+          <p>Your password reset code is: <span class="tracking-number">${token}</span></p>
+          <p>This code will expire in 30 minutes.</p>
+          <p>Click the button below to reset your password:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" class="button">Reset Password</a>
+          </div>
+          <p>If you didn't request this, please ignore this email.</p>
+          <div style="background-color: #f8f8f8; padding: 15px; border-left: 4px solid #FFD700; margin: 20px 0;">
+            <p style="color: #666; margin: 0;">
+              <strong>Important:</strong> If you don't see this email in your inbox, please check your spam or junk folder.
+            </p>
+          </div>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} GoFromA2Z Africa. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+
+    await EmailService.sendEmail(email, `Password Reset Request - GoFromA2Z Africa`, html);
+  }
 }
 
 export const sendEmail = EmailService.sendEmail; 
