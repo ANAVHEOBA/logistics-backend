@@ -2,10 +2,11 @@ import { Request, Response, RequestHandler } from 'express';
 import bcrypt from 'bcrypt';
 import { UserCrud } from './user.crud';
 import { generateOTP, getOTPExpiry } from '../../utils/otp.helper';
-import { sendVerificationEmail } from '../../utils/email.helper';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../../utils/email.helper';
 import { IUserRegistration, IVerifyEmail, ILoginRequest } from './user.model';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config/environment';
+import { UserSchema } from './user.schema';
 
 export class UserController {
   private userCrud: UserCrud;
@@ -204,6 +205,75 @@ export class UserController {
       res.status(500).json({
         success: false,
         message: 'Login failed'
+      });
+    }
+  };
+
+  forgotPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email } = req.body;
+      const user = await this.userCrud.findByEmail(email);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+        return;
+      }
+
+      const resetToken = generateOTP();
+      const resetExpiry = getOTPExpiry();
+
+      await this.userCrud.setPasswordResetToken(
+        email,
+        resetToken,
+        resetExpiry
+      );
+
+      await sendPasswordResetEmail(email, resetToken, user.name);
+
+      res.status(200).json({
+        success: true,
+        message: 'Password reset instructions sent to email'
+      });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process forgot password request'
+      });
+    }
+  };
+
+  resetPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { token, password } = req.body;
+      const user = await UserSchema.findOne({
+        passwordResetToken: token,
+        passwordResetExpiry: { $gt: new Date() }
+      });
+
+      if (!user) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid or expired reset token'
+        });
+        return;
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await this.userCrud.updatePassword(user._id.toString(), hashedPassword);
+
+      res.status(200).json({
+        success: true,
+        message: 'Password reset successful'
+      });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to reset password'
       });
     }
   };
