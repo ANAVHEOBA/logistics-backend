@@ -231,7 +231,7 @@ export class UserController {
         resetExpiry
       );
 
-      await sendPasswordResetEmail(email, resetToken, user.name);
+      await sendPasswordResetEmail(email, resetToken, user.name, 'merchant');
 
       res.status(200).json({
         success: true,
@@ -249,12 +249,10 @@ export class UserController {
   resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
       const { token, password } = req.body;
-
-      // Find user by reset token and check expiry
       const user = await UserSchema.findOne({
         passwordResetToken: token,
         passwordResetExpiry: { $gt: new Date() }
-      }).select('+passwordResetToken +passwordResetExpiry');
+      });
 
       if (!user) {
         res.status(400).json({
@@ -264,19 +262,8 @@ export class UserController {
         return;
       }
 
-      // Hash the new password
       const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Update the password and clear reset token
-      const updatedUser = await this.userCrud.updatePassword(user._id.toString(), hashedPassword);
-
-      if (!updatedUser) {
-        res.status(500).json({
-          success: false,
-          message: 'Failed to update password'
-        });
-        return;
-      }
+      await this.userCrud.updatePassword(user._id.toString(), hashedPassword);
 
       res.status(200).json({
         success: true,
