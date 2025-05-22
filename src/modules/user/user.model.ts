@@ -10,6 +10,8 @@ export interface IUserBase {
   verificationCode: string;
   verificationCodeExpiry: Date;
   status: 'active' | 'inactive';
+  passwordResetToken?: string;
+  passwordResetExpiry?: Date;
 }
 
 // Interface for the Mongoose document

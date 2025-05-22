@@ -192,37 +192,51 @@ export class UserCrud {
     token: string,
     expiry: Date
   ): Promise<IUser | null> {
-    const user = await UserSchema.findOneAndUpdate(
-      { email },
-      {
-        $set: {
-          passwordResetToken: token,
-          passwordResetExpiry: expiry
-        }
-      },
-      { new: true }
-    );
-    return user ? this.toUserResponse(user) : null;
+    try {
+      const user = await UserSchema.findOneAndUpdate(
+        { email },
+        {
+          $set: {
+            passwordResetToken: token,
+            passwordResetExpiry: expiry
+          }
+        },
+        { new: true }
+      ).select('+passwordResetToken +passwordResetExpiry');
+      
+      return user ? this.toUserResponse(user) : null;
+    } catch (error) {
+      console.error('Error setting password reset token:', error);
+      throw error;
+    }
   }
 
   async updatePassword(
     userId: string,
     hashedPassword: string
   ): Promise<IUser | null> {
-    if (!mongoose.Types.ObjectId.isValid(userId)) return null;
+    try {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return null;
+      }
 
-    const user = await UserSchema.findByIdAndUpdate(
-      userId,
-      {
-        $set: {
-          password: hashedPassword,
-          passwordResetToken: null,
-          passwordResetExpiry: null
-        }
-      },
-      { new: true }
-    );
-    return user ? this.toUserResponse(user) : null;
+      const user = await UserSchema.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            password: hashedPassword,
+            passwordResetToken: null,
+            passwordResetExpiry: null
+          }
+        },
+        { new: true }
+      ).select('+passwordResetToken +passwordResetExpiry');
+
+      return user ? this.toUserResponse(user) : null;
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw error;
+    }
   }
 
   public toUser(userDoc: IUserDocument): IUser {
