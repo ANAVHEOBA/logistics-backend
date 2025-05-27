@@ -13,6 +13,10 @@ import { cartRouter } from './modules/cart/cart.router';
 import { errorHandler } from './middleware/error.middleware';
 import bodyParser from 'body-parser';
 
+import { createServer } from "node:http";
+import { Server } from "socket.io";
+
+
 const app = express();
 
 // CORS Configuration
@@ -32,6 +36,15 @@ const corsOptions = {
   preflightContinue: false,
   maxAge: 86400 // 24 hours
 };
+
+// Socket setup
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: corsOptions.origin,
+  },
+});
+
 
 // Apply CORS with options
 app.use(cors(corsOptions));
@@ -76,4 +89,4 @@ app.get('/health', (req, res) => {
 // Error handling
 app.use(errorHandler);
 
-export { app };
+export { app, io, server };
