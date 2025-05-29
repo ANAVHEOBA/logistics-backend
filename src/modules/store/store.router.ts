@@ -51,4 +51,8 @@ router.get('/:slug', storeController.getPublicStore);
 router.get('/:slug/products', storeController.getStoreProducts);
 router.post('/:slug/orders/guest', storeController.createGuestOrder);
 
+//Close and open store
+router.patch('/my-store/close', authMiddleware, storeController.closeStore);
+router.patch('/my-store/open', authMiddleware, storeController.openStore);
+
 export default router; 
