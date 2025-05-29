@@ -1271,4 +1271,75 @@ export class AdminController {
       throw error;
     }
   }
+
+  openStore = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+
+      // Validate storeId
+      if (!mongoose.Types.ObjectId.isValid(storeId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid store ID'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findById(storeId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+      store.openStore()
+
+      res.status(200).json({
+        success: true,
+        message: "store opened successfully"
+      });
+    } catch (error) {
+      console.error('Open store error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to open store'
+      })
+    }
+  };
+
+  closeStore = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { storeId } = req.params;
+
+      // Validate storeId
+      if (!mongoose.Types.ObjectId.isValid(storeId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid store ID'
+        })
+      }
+
+      const store = await this.storeCrud.findById(storeId);
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+      store.closeStore()
+
+      res.status(200).json({
+        success: true,
+        message: "store closed successfully"
+      });
+    } catch (error) {
+      console.error('Closed store error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to close store'
+      })
+    };
+  }
 }

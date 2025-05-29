@@ -1344,4 +1344,74 @@ export class StoreController {
       });
     }
   };
+
+  closeStore = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+      store.closeStore()
+      
+      res.status(200).json({
+        success: true,
+        message: 'Store closed successfully'
+      });
+    } catch (error) {
+      console.error('Close store error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to close store'
+      });
+    }
+  };
+
+  openStore = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const store = await this.storeCrud.findByUserId(userId);
+
+      if (!store) {
+        res.status(404).json({
+          success: false,
+          message: 'Store not found'
+        });
+        return;
+      }
+      store.openStore()
+      
+      res.status(200).json({
+        success: true,
+        message: 'Store opened successfully'
+      });
+    } catch (error) {
+      console.error('Open store error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to open store'
+      });
+    }
+  };
 } 

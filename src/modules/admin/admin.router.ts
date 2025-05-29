@@ -44,6 +44,10 @@ router.get('/stores', adminController.getAllStores);
 router.get('/stores/:storeId/payment-details', adminController.getStorePaymentDetails);
 router.patch('/stores/:storeId/status', adminController.updateStoreStatus)
 
+// Open and close stores
+router.patch('/stores/:storeId/close', adminController.closeStore)
+router.patch('/stores/:storeId/open', adminController.openStore)
+
 // Add these new routes after router.get('/stores', adminController.getAllStores);
 router.get('/stores/:storeId/metrics', adminController.getStoreMetricsById);
 router.get('/stores/:storeId/revenue', adminController.getStoreRevenueById);

@@ -1,4 +1,4 @@
-import { app } from './app';
+import { server } from './app';
 import { config } from './config/environment';
 import { connectDatabase } from './config/database';
 
@@ -8,7 +8,7 @@ const startServer = async () => {
     await connectDatabase();
 
     // Start server
-    app.listen(config.port, () => {
+    server.listen(config.port, () => {
       console.log(`Server is running on port ${config.port}`);
       console.log(`Environment: ${config.nodeEnv}`);
     });

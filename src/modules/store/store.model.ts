@@ -53,7 +53,11 @@ export interface IStore extends Document {
   createdAt: Date;
   updatedAt: Date;
   slug: string;
+  isOpen: boolean;
   getStoreUrl(): string;
+  closeStore(): void;
+  openStore(): void;
+
   paymentDetails: {
     accountName: string;
     accountNumber: string;
@@ -259,7 +263,11 @@ const storeSchema = new Schema<IStore, mongoose.Model<IStore>, IStoreMethods>({
   },
   adminNotes: {
     type: String
-  }
+  },
+  isOpen: {
+      type: Boolean,
+      default: true, // or false, depending on your default
+  },
 }, {
   timestamps: true
 });
@@ -343,6 +351,22 @@ storeSchema.statics.listStores = async function(options: StoreListOptions) {
     }
   };
 };
+
+
+storeSchema.methods.openStore = async function (): Promise<void> {
+  if (!this.isOpen) {
+    this.isOpen = true;
+    await this.save();
+  }
+};
+
+storeSchema.methods.closeStore = async function (): Promise<void> {
+  if (this.isOpen) {
+    this.isOpen = false;
+    await this.save();
+  }
+};
+
 
 // Check if the model exists before creating it
 export const Store = mongoose.models.Store || mongoose.model<IStore, mongoose.Model<IStore, {}, IStoreMethods>>('Store', storeSchema); 
