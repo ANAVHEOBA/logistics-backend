@@ -45,6 +45,11 @@ const io = new Server(server, {
   },
 });
 
+io.on("connection", (socket) => {
+  socket.on("join", (roomName) => {
+    socket.join(roomName);
+  });
+});
 
 // Apply CORS with options
 app.use(cors(corsOptions));
