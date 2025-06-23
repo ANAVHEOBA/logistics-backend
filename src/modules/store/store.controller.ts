@@ -261,7 +261,7 @@ export class StoreController {
 
       // Get the store URL using the method
       const storeUrl = process.env.NODE_ENV === 'development'
-        ? `http://localhost:5000/store/${store.slug}`
+        ? `https://www.gofroma2zafrica.com/store/${store.slug}`
         : `https://yourapp.com/store/${store.slug}`;
 
       res.status(200).json({

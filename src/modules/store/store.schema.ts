@@ -21,7 +21,7 @@ const storeSchema = new Schema<IStore>({
 // Add the method implementation
 storeSchema.methods.getStoreUrl = function(): string {
   if (process.env.NODE_ENV === 'development') {
-    return `http://localhost:5000/store/${this.slug}`;
+    return `https://www.gofroma2zafrica.com/store/${this.slug}`;
   }
   return `https://yourapp.com/store/${this.slug}`;
 };
