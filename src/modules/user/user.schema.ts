@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import { IUserDocument } from './user.model';
 
-const userSchema = new Schema({
+const userSchema = new Schema<IUserDocument>({
   email: {
     type: String,
     required: true,
@@ -11,7 +11,9 @@ const userSchema = new Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function () {
+      return (this as any).loginMethod !== 'google';
+    },
   },
   name: {
     type: String,
@@ -20,8 +22,9 @@ const userSchema = new Schema({
   },
   phone: {
     type: String,
-    required: true,
-    trim: true,
+    required: function () {
+      return (this as any).loginMethod !== 'google';
+    },
   },
   isEmailVerified: {
     type: Boolean,
@@ -29,27 +32,39 @@ const userSchema = new Schema({
   },
   verificationCode: {
     type: String,
-    required: true,
+    default: '',
   },
   verificationCodeExpiry: {
     type: Date,
-    required: true,
   },
   status: {
     type: String,
     enum: ['active', 'inactive'],
     default: 'inactive',
   },
+  loginMethod: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local',
+  },
+  googleId: {
+    type: String,
+    sparse: true,
+    index: true,
+  },
+  picture: {
+    type: String,
+  },
   passwordResetToken: {
     type: String,
-    select: false
+    select: false,
   },
   passwordResetExpiry: {
     type: Date,
-    select: false
-  }
+    select: false,
+  },
 }, {
-  timestamps: true
+  timestamps: true,
 });
 
 export const UserSchema = mongoose.model<IUserDocument>('User', userSchema);
