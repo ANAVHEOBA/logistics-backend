@@ -33,6 +33,8 @@ export interface IUserRegistration {
   password: string;
   name: string;
   phone: string;
+  isEmailVerified?: boolean;   // <-- NEW
+  status?: 'active' | 'inactive'; // <-- NEW
 }
 
 export interface IVerifyEmail {

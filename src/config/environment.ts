@@ -1,12 +1,8 @@
 import dotenv from 'dotenv';
-
 dotenv.config();
 
-// Ensure the MongoDB URI is properly formatted
 const formatMongoDBUri = (uri: string): string => {
-  // Remove any existing query parameters
   const baseUri = uri.split('?')[0];
-  // Add required query parameters for Atlas
   return `${baseUri}?retryWrites=true&w=majority&authMechanism=SCRAM-SHA-1`;
 };
 
@@ -16,28 +12,30 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
   nodeEnv: process.env.NODE_ENV || 'development',
   baseUrl: process.env.BASE_URL || 'http://localhost:5000',
+
   email: {
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
+      pass: process.env.EMAIL_PASSWORD,
+    },
   },
-  // Add bank account details
+
   bankAccounts: {
     default: {
       accountName: process.env.BANK_ACCOUNT_NAME || 'Default Account',
       accountNumber: process.env.BANK_ACCOUNT_NUMBER || '0123456789',
-      bankName: process.env.BANK_NAME || 'Default Bank'
-    }
+      bankName: process.env.BANK_NAME || 'Default Bank',
+    },
   },
+
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
-    folder: process.env.CLOUDINARY_FOLDER || 'products'
+    folder: process.env.CLOUDINARY_FOLDER || 'products',
   },
 
   firebase: {
@@ -51,6 +49,10 @@ export const config = {
     tokenUri: process.env.FIREBASE_TOKEN_URI,
     authProviderX509CertUrl: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
     clientX509CertUrl: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-    universeDomain: process.env.FIREBASE_UNIVERSE_DOMAIN
-  }
+    universeDomain: process.env.FIREBASE_UNIVERSE_DOMAIN,
+  },
+
+  /* NEW KEYS */
+  googleClientId:     process.env.GOOGLE_CLIENT_ID     || '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
 };

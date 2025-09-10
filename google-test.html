@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Google-Sign-In Test</title>
+  <!-- Google Identity Service -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #result { white-space: pre-wrap; background:#f5f5f5; padding: 10px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Google Sign-In → Backend (localhost:5000)</h2>
+
+  <!-- Google button will be rendered here -->
+  <div id="g_id_onload"
+       data-client_id="809741864040-nnh95oj6pbqobhnbuhfudqjkb7pbcnkf.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse">
+  </div>
+  <div class="g_id_signin"
+       data-type="standard"
+       data-size="large"
+       data-theme="outline"
+       data-text="signin_with"
+       data-shape="rectangular">
+  </div>
+
+  <h3>Backend response</h3>
+  <div id="result">Click the button above…</div>
+
+  <script>
+    async function handleCredentialResponse(googleResponse) {
+      const idToken = googleResponse.credential;
+
+      try {
+        const res = await fetch('http://localhost:5000/api/users/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: idToken })
+        });
+
+        const data = await res.json();
+        document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById('result').textContent = 'Error: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
