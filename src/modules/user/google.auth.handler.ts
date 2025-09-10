@@ -65,7 +65,8 @@ export const googleSignIn = async (req: Request, res: Response): Promise<void> =
           verificationCodeExpiry: new Date(),
           isEmailVerified: true,
           status: 'active',
-        });
+          loginMethod: 'google', // <-- still here
+        } as any); // <-- cast to shut TS up
         safeLog('info', 'User created with _id:', user._id);
       } catch (createErr: any) {
         /* ---- duplicate key race-condition ---- */

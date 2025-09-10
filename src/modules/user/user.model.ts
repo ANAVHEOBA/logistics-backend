@@ -37,6 +37,7 @@ export interface IUserRegistration {
   phone: string;
   isEmailVerified?: boolean;
   status?: 'active' | 'inactive';
+  loginMethod?: 'local' | 'google';
 }
 
 export interface IVerifyEmail {
