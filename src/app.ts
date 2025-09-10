@@ -27,7 +27,8 @@ const corsOptions = {
     'http://localhost:3002',
     'https://www.gofroma2zafrica.com',
     'https://www.admin.gofroma2zafrica.com',
-    'https://admin.gofroma2zafrica.com'
+    'https://admin.gofroma2zafrica.com',
+    'https://gofroma2zafrica-nu.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
