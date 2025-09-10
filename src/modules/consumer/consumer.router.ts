@@ -2,6 +2,7 @@ import express from 'express';
 import { ConsumerController } from './consumer.controller';
 import { authenticateConsumer } from '../../middleware/consumer.middleware';
 import { validateConsumerRegistration } from './consumer.validator';
+import { consumerGoogleSignIn } from './consumer.google.auth.handler';
 
 const router = express.Router();
 const consumerController = new ConsumerController();
@@ -12,6 +13,7 @@ router.post('/verify-email', consumerController.verifyEmail);
 router.post('/login', consumerController.login);
 router.post('/forgot-password', consumerController.forgotPassword);
 router.post('/reset-password', consumerController.resetPassword);
+router.post('/auth/google', consumerGoogleSignIn);
 
 
 // Protected routes - require consumer authentication

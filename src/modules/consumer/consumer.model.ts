@@ -19,6 +19,11 @@ export interface IConsumerBase {
   lastLoginAt?: Date;
   passwordResetToken?: string;
   passwordResetExpiry?: Date;
+
+  /* --- social-login additions (same as users) --- */
+  loginMethod?: 'local' | 'google';
+  googleId?: string;
+  picture?: string;
 }
 
 export interface IConsumerRegistration {
@@ -27,6 +32,7 @@ export interface IConsumerRegistration {
   firstName: string;
   lastName: string;
   phone: string;
+  loginMethod?: 'local' | 'google';   // <-- new
 }
 
 export interface IConsumerDocument extends Document, IConsumerBase {
