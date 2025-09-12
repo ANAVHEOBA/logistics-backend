@@ -50,6 +50,7 @@ export class OrderController {
       password: userDoc.password,
       name: userDoc.name,
       phone: userDoc.phone,
+      isPhoneVerified: userDoc.isPhoneVerified,
       isEmailVerified: userDoc.isEmailVerified,
       verificationCode: userDoc.verificationCode,
       verificationCodeExpiry: userDoc.verificationCodeExpiry,
