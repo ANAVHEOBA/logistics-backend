@@ -210,6 +210,65 @@ export class AdminController {
     }
   };
 
+  deleteUser = async (req: Request, res: Response): Promise<void> => {
+    try{
+      const { userId } = req.params;
+
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid user ID'
+        });
+        return;
+      }
+
+      this.userCrud.deleteUser(userId)
+      res.status(200).json(
+        {
+          success: true,
+          message: `Deleted user with id: ${userId}`
+        }
+      )
+    } catch(e) {
+      console.error("Delete use error", e)
+      res.status(500).json({
+        success: false,
+        message: "Failed to delete user"
+      })
+    }
+  }
+
+
+  deleteConsumer = async (req: Request, res: Response): Promise<void> => {
+    try{
+      const { consumerId } = req.params;
+
+
+      if (!mongoose.Types.ObjectId.isValid(consumerId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid consumer ID'
+        });
+        return;
+      }
+
+      this.consumerCrud.deleteConsumer(consumerId)
+      res.status(200).json(
+        {
+          success: true,
+          message: `Deleted consumer with id: ${consumerId}`
+        }
+      )
+    } catch(e) {
+      console.error("Delete use error", e)
+      res.status(500).json({
+        success: false,
+        message: "Failed to delete user"
+      })
+    }
+  }
+
   getAllOrders = async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;

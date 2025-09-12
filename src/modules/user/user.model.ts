@@ -1,4 +1,4 @@
-import { Document, Types } from 'mongoose';
+import { Document, Types } from "mongoose";
 
 export interface IUserBase {
   email: string;
@@ -6,14 +6,15 @@ export interface IUserBase {
   name: string;
   phone: string;
   isEmailVerified: boolean;
+  isPhoneVerified: boolean;
   verificationCode: string;
   verificationCodeExpiry: Date;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   passwordResetToken?: string;
   passwordResetExpiry?: Date;
 
   /* --- social-login additions --- */
-  loginMethod?: 'local' | 'google';
+  loginMethod?: "local" | "google";
   googleId?: string;
   picture?: string;
 }
@@ -36,8 +37,9 @@ export interface IUserRegistration {
   name: string;
   phone: string;
   isEmailVerified?: boolean;
-  status?: 'active' | 'inactive';
-  loginMethod?: 'local' | 'google';
+  isPhoneVerified?: boolean;
+  status?: "active" | "inactive";
+  loginMethod?: "local" | "google";
 }
 
 export interface IVerifyEmail {
@@ -46,7 +48,8 @@ export interface IVerifyEmail {
 }
 
 export interface ILoginRequest {
-  email: string;
+  email?: string;
+  phone?: string;
   password: string;
 }
 
@@ -55,7 +58,10 @@ export interface ILoginResponse {
   user: {
     _id: string;
     email: string;
+    phone: string;
     name: string;
     isEmailVerified: boolean;
+    isPhoneVerified: boolean;
   };
 }
+

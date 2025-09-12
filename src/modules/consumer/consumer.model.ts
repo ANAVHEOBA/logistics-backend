@@ -12,6 +12,7 @@ export interface IConsumerBase {
   lastName: string;
   phone: string;
   isEmailVerified: boolean;
+  isPhoneVerified: boolean;
   verificationCode: string;
   verificationCodeExpiry: Date;
   status: 'active' | 'inactive';

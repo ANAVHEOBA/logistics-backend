@@ -12,6 +12,7 @@ import { ConsumerSchema } from './consumer.schema';
 import { OrderCrud } from '../order/order.crud';
 import { StoreCrud } from '../store/store.crud';
 import { ProductCrud } from '../product/product.crud';
+import { sendWhatsAppOTP } from "../../services/whatsapp.service";
 import mongoose from 'mongoose';
 
 // Update the interface to match middleware requirements
@@ -45,44 +46,52 @@ export class ConsumerController {
       const { email, password, firstName, lastName, phone } = req.body;
 
       // Check if consumer already exists
-      const existingConsumer = await this.consumerCrud.findByEmail(email);
-      
-      if (existingConsumer) {
-        // If consumer exists and is verified, reject registration
-        if (existingConsumer.isEmailVerified) {
+      const existingConsumerByEmail = await this.consumerCrud.findByEmail(email);
+      const existingConsumerByPhone = await this.consumerCrud.findByPhone(phone);
+
+      if (existingConsumerByEmail) {
           res.status(400).json({
             success: false,
             message: 'Email already registered'
+          });
+          return;
+      }      
+      if (existingConsumerByPhone) {
+        // If consumer exists and is verified, reject registration
+        if (existingConsumerByPhone.isEmailVerified) {
+          res.status(400).json({
+            success: false,
+            message: 'Phone already registered'
           });
           return;
         }
 
         // If consumer exists but not verified, check verification code status
         const now = new Date();
-        if (now <= existingConsumer.verificationCodeExpiry) {
+        if (now <= existingConsumerByPhone.verificationCodeExpiry) {
           // Verification code is still valid
           res.status(400).json({
             success: false,
-            message: 'Please verify your email with the code already sent',
-            consumerId: existingConsumer._id
+            message: 'Please verify your phone with the code already sent',
+            consumerId: existingConsumerByPhone._id
           });
           return;
         }
 
         // Verification code has expired, generate new one
         const otp = generateOTP();
-        const updatedConsumer = await this.consumerCrud.updateConsumer(existingConsumer._id.toString(), {
+        const updatedConsumer = await this.consumerCrud.updateConsumer(existingConsumerByPhone._id.toString(), {
           verificationCode: otp,
           verificationCodeExpiry: getOTPExpiry()
         });
 
-        // Send new verification email
-        await sendVerificationEmail(email, otp, firstName);
+        // Send whatsapp otp
+        await sendWhatsAppOTP(phone, otp);
 
         res.status(200).json({
           success: true,
-          message: 'New verification code has been sent to your email',
-          consumerId: existingConsumer._id
+          message: 'New verification code has been sent to your phone',
+          consumerId: existingConsumerByPhone._id
         });
         return;
       }
@@ -104,8 +113,8 @@ export class ConsumerController {
         status: 'inactive'
       });
 
-      // Send verification email
-      await sendVerificationEmail(email, otp, firstName);
+        // Send whatsapp otp
+        await sendWhatsAppOTP(phone, otp);
 
       res.status(201).json({
         success: true,
@@ -120,6 +129,63 @@ export class ConsumerController {
       });
     }
   };
+
+
+  verifyPhone = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { consumerId, otp } = req.body;
+
+      const consumer = await this.consumerCrud.findById(consumerId);
+      if (!consumer) {
+        res.status(404).json({
+          success: false,
+          message: 'Consumer not found'
+        });
+        return;
+      }
+
+      if (consumer.isPhoneVerified) {
+        res.status(400).json({
+          success: false,
+          message: 'Phone already verified'
+        });
+        return;
+      }
+
+      if (consumer.verificationCode !== otp) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid verification code'
+        });
+        return;
+      }
+
+      if (new Date() > consumer.verificationCodeExpiry) {
+        res.status(400).json({
+          success: false,
+          message: 'Verification code expired'
+        });
+        return;
+      }
+
+      const verifiedConsumer = await this.consumerCrud.verifyPhone(consumerId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Phone verified successfully'
+      });
+    } catch (error) {
+      console.error('Phone verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Phone verification failed'
+      });
+    }
+  };
+
 
   verifyEmail = async (
     req: Request,
@@ -181,37 +247,75 @@ export class ConsumerController {
     res: Response
   ): Promise<void> => {
     try {
-      const { email, password } = req.body;
+      const { email, phone, password } = req.body;
+     
+      let consumer;
+      if (email) {
+        // Find consumer by email
+        consumer = await this.consumerCrud.findByEmail(email);
+        if (!consumer) {
+          res.status(401).json({
+            success: false,
+            message: 'Invalid credentials'
+          });
+          return;
+        }
 
-      // Find consumer by email
-      const consumer = await this.consumerCrud.findByEmail(email);
+        // Check if email is verified
+        if (!consumer.isEmailVerified) {
+          res.status(401).json({
+            success: false,
+            message: 'Please verify your email first'
+          });
+          return;
+        }
+
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, consumer.password);
+        if (!isValidPassword) {
+          res.status(401).json({
+            success: false,
+            message: 'Invalid credentials'
+          });
+          return;
+        }
+      } else if (phone) {
+        consumer = await this.consumerCrud.findByPhone(phone);
+        if (!consumer) {
+          res.status(401).json({
+            success: false,
+            message: 'Invalid credentials'
+          });
+          return;
+        }
+
+        // Check if email is verified
+        if (!consumer.isPhoneVerified) {
+          res.status(401).json({
+            success: false,
+            message: 'Please verify your phone first'
+          });
+          return;
+        }
+
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, consumer.password);
+        if (!isValidPassword) {
+          res.status(401).json({
+            success: false,
+            message: 'Invalid credentials'
+          });
+          return;
+        }
+      }
+
       if (!consumer) {
-        res.status(401).json({
-          success: false,
-          message: 'Invalid credentials'
-        });
+          res.status(404).json({
+            success: false,
+            message: 'No such user exist'
+          });
         return;
       }
-
-      // Check if email is verified
-      if (!consumer.isEmailVerified) {
-        res.status(401).json({
-          success: false,
-          message: 'Please verify your email first'
-        });
-        return;
-      }
-
-      // Verify password
-      const isValidPassword = await bcrypt.compare(password, consumer.password);
-      if (!isValidPassword) {
-        res.status(401).json({
-          success: false,
-          message: 'Invalid credentials'
-        });
-        return;
-      }
-
       // Update last login
       await this.consumerCrud.updateLastLogin(consumer._id.toString());
 
@@ -220,6 +324,7 @@ export class ConsumerController {
         { 
           consumerId: consumer._id,
           email: consumer.email,
+          phone: consumer.phone,
           type: 'consumer'  // To distinguish from store owners
         },
         config.jwtSecret,
@@ -233,9 +338,11 @@ export class ConsumerController {
           consumer: {
             _id: consumer._id,
             email: consumer.email,
+            phone: consumer.phone,
             firstName: consumer.firstName,
             lastName: consumer.lastName,
-            isEmailVerified: consumer.isEmailVerified
+            isEmailVerified: consumer.isEmailVerified,
+            isPhoneVerified: consumer.isPhoneVerified
           }
         }
       });

@@ -60,8 +60,17 @@ export class ConsumerCrud {
     return await consumer.save();
   }
 
+  async deleteConsumer(consumerId: string) { 
+    await ConsumerSchema.findByIdAndDelete(consumerId);
+  }
+
   async findByEmail(email: string): Promise<IConsumerDocument | null> {
     return await ConsumerSchema.findOne({ email });
+  }
+
+
+  async findByPhone(phone: string): Promise<IConsumerDocument | null> {
+    return await ConsumerSchema.findOne({ phone });
   }
 
   async findById(id: string): Promise<IConsumerDocument | null> {
@@ -85,6 +94,25 @@ export class ConsumerCrud {
       { new: true }
     );
   }
+
+  
+  async verifyPhone(consumerId: string): Promise<IConsumerDocument | null> {
+    if (!mongoose.Types.ObjectId.isValid(consumerId)) return null;
+    
+    return await ConsumerSchema.findByIdAndUpdate(
+      consumerId,
+      {
+        $set: {
+          isPhoneVerified: true,
+          status: 'active',
+          verificationCode: '',
+          verificationCodeExpiry: new Date()
+        }
+      },
+      { new: true }
+    );
+  }
+
 
   async updateLastLogin(consumerId: string): Promise<void> {
     if (!mongoose.Types.ObjectId.isValid(consumerId)) return;

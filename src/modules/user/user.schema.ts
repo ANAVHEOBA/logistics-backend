@@ -25,8 +25,13 @@ const userSchema = new Schema<IUserDocument>({
     required: function () {
       return (this as any).loginMethod !== 'google';
     },
+    unique: true,
   },
   isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  isPhoneVerified: {
     type: Boolean,
     default: false,
   },

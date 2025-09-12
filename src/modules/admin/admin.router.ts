@@ -18,6 +18,7 @@ router.post('/fcm-token', adminController.updateFcmToken);
 // User routes
 router.get('/users', adminController.getAllUsers);
 router.get('/users/:userId', adminController.getUserById);
+router.delete('/users/:userId', adminController.deleteUser);
 
 // Order routes
 router.get('/orders', adminController.getAllOrders);
@@ -28,6 +29,7 @@ router.get('/orders/ready-for-pickup', adminController.getReadyForPickupOrders);
 // Consumer Management routes
 router.get('/consumers/stats', adminController.getConsumerStats);
 router.get('/consumers', adminController.getAllConsumers);
+router.delete('/consumers/:consumerId', adminController.deleteConsumer);
 router.get('/consumers/:consumerId', adminController.getConsumerDetails);
 router.get('/consumers/:consumerId/orders', adminController.getConsumerOrders);
 router.patch('/consumers/:consumerId/status', adminController.updateConsumerStatus);

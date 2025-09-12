@@ -55,4 +55,9 @@ export const config = {
   /* NEW KEYS */
   googleClientId:     process.env.GOOGLE_CLIENT_ID     || '',
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+
+  /* KUDI SMS*/
+  kudismsAPIkey: process.env.KUDISMS_API_KEY || '',
+  kudismsWhatsAppTemplate: process.env.KUDISMS_WHATSAPP_TEMPLATE || '',
+  kudismsWhatsAppURL: process.env.KUDISMS_WHATSAPP_URL || '',
 };

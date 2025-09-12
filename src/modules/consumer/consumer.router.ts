@@ -10,6 +10,7 @@ const consumerController = new ConsumerController();
 // Public routes
 router.post('/register', validateConsumerRegistration, consumerController.register);
 router.post('/verify-email', consumerController.verifyEmail);
+router.post('/verify-phone', consumerController.verifyPhone);
 router.post('/login', consumerController.login);
 router.post('/forgot-password', consumerController.forgotPassword);
 router.post('/reset-password', consumerController.resetPassword);

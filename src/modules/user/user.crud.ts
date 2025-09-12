@@ -58,6 +58,33 @@ export class UserCrud {
     }
   }
 
+
+  async findByPhone(phone: string): Promise<IUser | null> {
+    try {
+      const user = await UserSchema.findOne({ phone }).exec();
+      return user ? this.toUserResponse(user) : null;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verifyPhone(userId: string): Promise<IUser | null> {
+    try {
+      const user = await UserSchema.findByIdAndUpdate(
+        userId,
+        {
+          isPhoneVerified: true,
+          status: 'active',
+          verificationCode: '',
+        },
+        { new: true }
+      ).exec();
+      return user ? this.toUserResponse(user) : null;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async findAll(page: number, limit: number): Promise<IUserDocument[]> {
     try {
       const skip = (page - 1) * limit;
@@ -236,6 +263,15 @@ export class UserCrud {
     } catch (error) {
       console.error('Error updating password:', error);
       throw error;
+    }
+  }
+
+  async deleteUser(userId: string) {
+    try {
+      await UserSchema.findByIdAndDelete(userId)
+    } catch(error) {
+      console.error("Error deleting user", error)
+      throw error
     }
   }
 
