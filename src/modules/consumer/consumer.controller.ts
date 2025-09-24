@@ -247,75 +247,27 @@ export class ConsumerController {
     res: Response
   ): Promise<void> => {
     try {
-      const { email, phone, password } = req.body;
+      const { phone, password } = req.body;
      
-      let consumer;
-      if (email) {
-        // Find consumer by email
-        consumer = await this.consumerCrud.findByEmail(email);
-        if (!consumer) {
-          res.status(401).json({
-            success: false,
-            message: 'Invalid credentials'
-          });
-          return;
-        }
-
-        // Check if email is verified
-        if (!consumer.isEmailVerified) {
-          res.status(401).json({
-            success: false,
-            message: 'Please verify your email first'
-          });
-          return;
-        }
-
-        // Verify password
-        const isValidPassword = await bcrypt.compare(password, consumer.password);
-        if (!isValidPassword) {
-          res.status(401).json({
-            success: false,
-            message: 'Invalid credentials'
-          });
-          return;
-        }
-      } else if (phone) {
-        consumer = await this.consumerCrud.findByPhone(phone);
-        if (!consumer) {
-          res.status(401).json({
-            success: false,
-            message: 'Invalid credentials'
-          });
-          return;
-        }
-
-        // Check if email is verified
-        if (!consumer.isPhoneVerified) {
-          res.status(401).json({
-            success: false,
-            message: 'Please verify your phone first'
-          });
-          return;
-        }
-
-        // Verify password
-        const isValidPassword = await bcrypt.compare(password, consumer.password);
-        if (!isValidPassword) {
-          res.status(401).json({
-            success: false,
-            message: 'Invalid credentials'
-          });
-          return;
-        }
-      }
-
+      const consumer = await this.consumerCrud.findByPhone(phone as string);
       if (!consumer) {
-          res.status(404).json({
-            success: false,
-            message: 'No such user exist'
-          });
+        res.status(401).json({
+          success: false,
+          message: 'No such User exist'
+        });
         return;
       }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, consumer.password);
+      if (!isValidPassword) {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+        return;
+      }
+
       // Update last login
       await this.consumerCrud.updateLastLogin(consumer._id.toString());
 

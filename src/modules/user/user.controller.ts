@@ -216,75 +216,26 @@ export class UserController {
     res: Response,
   ): Promise<void> => {
     try {
-      const { email, phone, password } = req.body;
-      let user;
+      const { phone, password } = req.body;
 
-      // Find user by email
-      if (email) {
-        user = await this.userCrud.findByEmail(email);
-        if (!user) {
-          res.status(401).json({
-            success: false,
-            message: "Invalid credentials",
-          });
-          return;
-        }
-
-        // Check if email is verified
-        if (!user.isEmailVerified) {
-          res.status(401).json({
-            success: false,
-            message: "Please verify your email first",
-          });
-          return;
-        }
-
-        // Verify password
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-          res.status(401).json({
-            success: false,
-            message: "Invalid credentials",
-          });
-          return;
-        }
-      } else if (phone) {
-        user = await this.userCrud.findByPhone(phone);
-        if (!user) {
-          res.status(401).json({
-            success: false,
-            message: "Invalid credentials",
-          });
-          return;
-        }
-
-        // Check if email is verified
-        if (!user.isPhoneVerified) {
-          res.status(401).json({
-            success: false,
-            message: "Please verify your Phone first",
-          });
-          return;
-        }
-
-        // Verify password
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-          res.status(401).json({
-            success: false,
-            message: "Invalid credentials",
-          });
-          return;
-        }
-      }
-
+      const user = await this.userCrud.findByPhone(phone as string);
       if (!user) {
-          res.status(404).json({
-            success: false,
-            message: "No such user exist",
-          });
-          return;
+        res.status(401).json({
+          success: false,
+          message: "User with phone number does not exit",
+        });
+        return;
       }
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        res.status(401).json({
+          success: false,
+          message: "Invalid credentials",
+        });
+        return;
+      }
+
       // Generate JWT token
       const token = jwt.sign(
         { userId: user._id, email: user.email, phone: user.phone },
@@ -299,8 +250,10 @@ export class UserController {
           user: {
             _id: user._id,
             email: user.email,
+            phone: user.phone,
             name: user.name,
             isEmailVerified: user.isEmailVerified,
+            isPhoneVerified: user.isPhoneVerified
           },
         },
       });
