@@ -28,7 +28,11 @@ const corsOptions = {
     'https://www.gofroma2zafrica.com',
     'https://www.admin.gofroma2zafrica.com',
     'https://admin.gofroma2zafrica.com',
-    'https://gofroma2zafrica-nu.vercel.app'
+    'https://gofroma2zafrica-nu.vercel.app',
+    'https://admin.africgo.org',
+    'https://africgo.org',
+    'https://www.admin.africgo.org',
+    'https://www.africgo.org'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
